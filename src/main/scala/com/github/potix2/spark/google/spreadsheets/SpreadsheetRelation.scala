@@ -11,26 +11,29 @@ case class SpreadsheetRelation protected[spark] (
                                                   spreadsheetName: String,
                                                   worksheetName: String)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
+
   import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService._
 
   override def schema: StructType = inferSchema()
 
-  override def buildScan(): RDD[Row] = {
+  private lazy val rows: Seq[Map[String, String]] = {
     implicit val ctx = context
-    val schema = inferSchema()
-    val schemaFields = schema.fields
-    val rows = for {
+    val items = for {
       aSheet <- findSpreadsheet(spreadsheetName)
       aWorksheet <- aSheet.worksheets.find(w => w.entry.getTitle.getPlainText == worksheetName)
     } yield aWorksheet.rows
 
-    if(rows.isEmpty) {
+    if(items.isEmpty) {
       throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
     }
+    items.get
+  }
 
-    sqlContext.sparkContext.makeRDD(rows.get).mapPartitions { iter =>
+  override def buildScan(): RDD[Row] = {
+    val schema = inferSchema()
+    sqlContext.sparkContext.makeRDD(rows).mapPartitions { iter =>
       iter.map { m =>
-        Row.fromSeq(schemaFields.map(field => m(field.name)))
+        Row.fromSeq(schema.fields.map(field => m(field.name)))
       }
     }
   }
@@ -40,9 +43,8 @@ case class SpreadsheetRelation protected[spark] (
   }
 
   private def inferSchema(): StructType =
-    StructType(List(
-      StructField("col1", StringType, nullable = true),
-      StructField("col2", StringType, nullable = true),
-      StructField("col3", StringType, nullable = true)
-    ))
+    StructType(rows(0).keys.toList.map { fieldName =>
+      StructField(fieldName, StringType, nullable = true)
+    })
+
 }

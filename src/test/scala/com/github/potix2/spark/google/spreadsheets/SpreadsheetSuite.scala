@@ -22,16 +22,29 @@ class SpreadsheetSuite extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-  test("DSL test") {
+  test("DSL test: case1") {
     val results = sqlContext
     .sheet(
         serviceAccountId,
         testCredentialPath,
         "SpreadsheetSuite",
-        "dsl_test")
+        "case1")
     .select("col1")
     .collect()
 
     assert(results.size === 15)
+  }
+
+  test("DSL test: case2") {
+    val results = sqlContext
+    .sheet(
+        serviceAccountId,
+        testCredentialPath,
+        "SpreadsheetSuite",
+        "case2")
+    .select("id", "firstname", "lastname", "email")
+    .collect()
+
+    assert(results.size === 10)
   }
 }
