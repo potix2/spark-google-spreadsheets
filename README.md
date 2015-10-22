@@ -3,6 +3,7 @@
 Google Spreadsheets datasource for [SparkSQL and DataFrames](http://spark.apache.org/docs/latest/sql-programming-guide.html)
 
 [![Build Status](https://travis-ci.org/potix2/spark-google-spreadsheets.svg?branch=master)](https://travis-ci.org/potix2/spark-google-spreadsheets)
+[![Coverage Status](https://coveralls.io/repos/potix2/spark-google-spreadsheets/badge.svg?branch=master&service=github)](https://coveralls.io/github/potix2/spark-google-spreadsheets?branch=master)
 
 ## Requirements
 
