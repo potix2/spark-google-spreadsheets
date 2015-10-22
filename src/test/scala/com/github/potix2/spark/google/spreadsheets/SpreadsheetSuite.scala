@@ -1,4 +1,4 @@
-package com.potix2.spark.google.spreadsheets
+package com.github.potix2.spark.google.spreadsheets
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext

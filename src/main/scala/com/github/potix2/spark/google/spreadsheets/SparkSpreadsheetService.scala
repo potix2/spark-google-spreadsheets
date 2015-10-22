@@ -1,4 +1,4 @@
-package com.potix2.spark.google.spreadsheets
+package com.github.potix2.spark.google.spreadsheets
 
 import java.io.File
 import java.net.URL

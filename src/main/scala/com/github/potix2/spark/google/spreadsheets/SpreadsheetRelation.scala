@@ -1,6 +1,6 @@
-package com.potix2.spark.google.spreadsheets
+package com.github.potix2.spark.google.spreadsheets
 
-import com.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
+import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
@@ -11,7 +11,7 @@ case class SpreadsheetRelation protected[spark] (
                                                   spreadsheetName: String,
                                                   worksheetName: String)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
-  import com.potix2.spark.google.spreadsheets.SparkSpreadsheetService._
+  import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService._
 
   override def schema: StructType = inferSchema()
 

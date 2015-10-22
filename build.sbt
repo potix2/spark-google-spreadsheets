@@ -1,6 +1,6 @@
 name := "spark-google-spreadsheets"
 
-organization := "com.potix2"
+organization := "com.github.potix2"
 
 scalaVersion := "2.10.6"
 
@@ -46,6 +46,10 @@ releaseCrossBuild := true
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
+
+publishArtifact in Test := false
+
+pomIncludeRepository := { _ => false }
 
 publishTo := {
   val nexus = "https://oss.sonatype.org/"

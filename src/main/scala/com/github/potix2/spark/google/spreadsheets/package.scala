@@ -11,7 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.potix2.spark.google
+package com.github.potix2.spark.google
+
 import java.io.File
 
 import org.apache.spark.sql.SQLContext
