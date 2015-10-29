@@ -60,4 +60,15 @@ class SpreadsheetSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(results.size === 10)
   }
+
+  test("DDL test") {
+    sqlContext.sql(
+      s"""
+         |CREATE TEMPORARY TABLE SpreadsheetSuite
+         |USING com.github.potix2.spark.google.spreadsheets
+         |OPTIONS (worksheet "case2", spreadsheet "SpreadsheetSuite", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+       """.stripMargin.replaceAll("\n", " "))
+
+    assert(sqlContext.sql("SELECT id, firstname, lastname FROM SpreadsheetSuite").collect().size == 10)
+  }
 }
