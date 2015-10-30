@@ -66,7 +66,10 @@ object SparkSpreadsheetService {
       new SparkWorksheet(context.insert(entry.getWorksheetFeedUrl, worksheetEntry))
     }
 
-    def worksheets(implicit context: SparkSpreadsheetContext): Seq[SparkWorksheet] =
+    def findWorksheet(worksheetName: String)(implicit context: SparkSpreadsheetContext): Option[SparkWorksheet] =
+      worksheets.find(_.entry.getTitle.getPlainText == worksheetName)
+
+    private def worksheets(implicit context: SparkSpreadsheetContext): Seq[SparkWorksheet] =
       entry.getWorksheets.map(new SparkWorksheet(_))
   }
 

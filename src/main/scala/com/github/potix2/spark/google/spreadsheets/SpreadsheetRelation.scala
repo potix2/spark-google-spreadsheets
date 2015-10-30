@@ -31,15 +31,13 @@ case class SpreadsheetRelation protected[spark] (
 
   private lazy val rows: Seq[Map[String, String]] = {
     implicit val ctx = context
-    val items = for {
-      aSheet <- findSpreadsheet(spreadsheetName)
-      aWorksheet <- aSheet.worksheets.find(w => w.entry.getTitle.getPlainText == worksheetName)
-    } yield aWorksheet.rows
-
-    if(items.isEmpty) {
-      throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
+    findSpreadsheet(spreadsheetName) match {
+      case Some(aSheet) => aSheet.findWorksheet(worksheetName) match {
+        case Some(aWorksheet) => aWorksheet.rows
+        case None => throw new RuntimeException(s"no such a worksheet: $worksheetName")
+      }
+      case None => throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
     }
-    items.get
   }
 
   override def buildScan(): RDD[Row] = {

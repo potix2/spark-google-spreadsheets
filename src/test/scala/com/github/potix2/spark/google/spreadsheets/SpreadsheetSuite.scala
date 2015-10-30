@@ -66,7 +66,7 @@ class SpreadsheetSuite extends FunSuite with BeforeAndAfterAll {
       s"""
          |CREATE TEMPORARY TABLE SpreadsheetSuite
          |USING com.github.potix2.spark.google.spreadsheets
-         |OPTIONS (worksheet "case2", spreadsheet "SpreadsheetSuite", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+         |OPTIONS (spreadsheet "SpreadsheetSuite", worksheet "case2", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
        """.stripMargin.replaceAll("\n", " "))
 
     assert(sqlContext.sql("SELECT id, firstname, lastname FROM SpreadsheetSuite").collect().size == 10)
