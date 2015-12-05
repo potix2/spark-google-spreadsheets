@@ -20,7 +20,7 @@ Using Maven:
 ```xml
 <dependency>
   <groupId>com.github.potix2<groupId>
-  <artifactId>spark-google-spreadsheets-2.11</artifactId>
+  <artifactId>spark-google-spreadsheets_2.11</artifactId>
   <version>0.1.1</version>
 </dependency>
 ```
