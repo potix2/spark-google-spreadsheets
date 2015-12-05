@@ -36,19 +36,6 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-sql" % testSparkVersion.value
 )
 
-/*
-assemblyExcludedJars in assembly := {
-    val cp = (fullClasspath in assembly).value
-    cp filter { x => List("slf4j-api-1.7.10.jar",
-        "parquet-format-2.2.0-rc1.jar",
-        "kryo-2.21.jar",
-        "minlog-1.2.jar",
-        "spark-network-common_2.10-1.4.1.jar",
-        "guava-14.0.1.jar"
-    ).exists(_ == x.data.getName) }
-}
-*/
-
 /**
  * release settings
  */
