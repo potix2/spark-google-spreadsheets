@@ -2,11 +2,11 @@ name := "spark-google-spreadsheets"
 
 organization := "com.github.potix2"
 
-scalaVersion := "2.10.6"
+scalaVersion := "2.11.7"
 
 crossScalaVersions := Seq("2.10.6", "2.11.7")
 
-version := "0.1.0-SNAPSHOT"
+version := "0.1.1"
 
 spName := "potix2/spark-google-spreadsheets"
 
@@ -16,7 +16,7 @@ spIncludeMaven := true
 
 spIgnoreProvided := true
 
-sparkVersion := "1.4.1"
+sparkVersion := "1.5.0"
 
 val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 
@@ -27,14 +27,27 @@ sparkComponents := Seq("sql")
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.5" % "provided",
   "org.scalatest" %% "scalatest" % "2.2.1" % "test",
-  "com.google.api-client" % "google-api-client" % "1.20.0" % "provided",
-  "com.google.gdata" % "core" % "1.47.1" % "provided"
+  "com.google.api-client" % "google-api-client" % "1.20.0",
+  "com.google.gdata" % "core" % "1.47.1"
 )
 
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % testSparkVersion.value,
   "org.apache.spark" %% "spark-sql" % testSparkVersion.value
 )
+
+/*
+assemblyExcludedJars in assembly := {
+    val cp = (fullClasspath in assembly).value
+    cp filter { x => List("slf4j-api-1.7.10.jar",
+        "parquet-format-2.2.0-rc1.jar",
+        "kryo-2.21.jar",
+        "minlog-1.2.jar",
+        "spark-network-common_2.10-1.4.1.jar",
+        "guava-14.0.1.jar"
+    ).exists(_ == x.data.getName) }
+}
+*/
 
 /**
  * release settings
@@ -61,13 +74,6 @@ publishTo := {
 
 pomExtra := (
   <url>https://github.com/potix2/spark-google-spreadsheets</url>
-  <licenses>
-    <license>
-      <name>Apache License, Verision 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
   <scm>
     <url>git@github.com:potix2/spark-google-spreadsheets.git</url>
     <connection>scm:git:git@github.com:potix2/spark-google-spreadsheets.git</connection>
