@@ -27,7 +27,7 @@ Using Maven:
 
 ## SQL API
 
-```
+```sql
 CREATE TABLE cars
 USING com.github.potix2.spark.google.spreadsheets
 OPTIONS (
@@ -40,7 +40,7 @@ OPTIONS (
 
 ## Scala API
 
-```
+```scala
 import org.apache.spark.sql.SQLContext
 
 val sqlContext = new SQLContext(sc)
