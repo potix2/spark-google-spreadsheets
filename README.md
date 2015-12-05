@@ -25,6 +25,36 @@ Using Maven:
 </dependency>
 ```
 
+## SQL API
+
+```
+CREATE TABLE cars
+USING com.github.potix2.spark.google.spreadsheets
+OPTIONS (
+    spreadsheet "YourSpreadsheet",
+    worksheet "worksheet1",
+    serviceAccountId "xxxxxx@developer.gserviceaccount.com",
+    credentialPath "/path/to/credentail.p12"
+)
+```
+
+## Scala API
+
+```
+import org.apache.spark.sql.SQLContext
+
+val sqlContext = new SQLContext(sc)
+val df = sqlContext.read.
+format("com.github.potix2.spark.google.spreadsheets").
+option("spreadsheet", "YourSpreadsheet").
+option("worksheet", "worksheet1)".
+option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
+option("credentialPath", "/path/to/credentail.p12").
+load("YourSpreadsheet")
+
+```
+
+
 ## License
 
 Copyright 2015, Katsunori Kanda
