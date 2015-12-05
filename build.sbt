@@ -27,13 +27,15 @@ sparkComponents := Seq("sql")
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.5" % "provided",
   "org.scalatest" %% "scalatest" % "2.2.1" % "test",
-  "com.google.api-client" % "google-api-client" % "1.20.0",
+  ("com.google.api-client" % "google-api-client" % "1.20.0").
+    exclude("com.google.guava", "guava-jdk5"),
   "com.google.gdata" % "core" % "1.47.1"
 )
 
 libraryDependencies ++= Seq(
-  "org.apache.spark" %% "spark-core" % testSparkVersion.value,
-  "org.apache.spark" %% "spark-sql" % testSparkVersion.value
+  "org.apache.spark" %% "spark-core" % testSparkVersion.value % "test" force(),
+  "org.apache.spark" %% "spark-sql" % testSparkVersion.value % "test"  force(),
+  "org.scala-lang" % "scala-library" % scalaVersion.value % "compile"
 )
 
 /**
@@ -72,6 +74,9 @@ pomExtra := (
       <url>https://github.com/potix2/</url>
     </developer>
   </developers>)
+
+// Skip tests during assembly
+test in assembly := {}
 
 ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := {
   if (scalaBinaryVersion.value == "2.10") false
