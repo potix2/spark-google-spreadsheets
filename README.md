@@ -47,7 +47,7 @@ val sqlContext = new SQLContext(sc)
 val df = sqlContext.read.
 format("com.github.potix2.spark.google.spreadsheets").
 option("spreadsheet", "YourSpreadsheet").
-option("worksheet", "worksheet1)".
+option("worksheet", "worksheet1").
 option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
 option("credentialPath", "/path/to/credentail.p12").
 load("YourSpreadsheet")
