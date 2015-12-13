@@ -35,7 +35,8 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % testSparkVersion.value % "test" force(),
   "org.apache.spark" %% "spark-sql" % testSparkVersion.value % "test"  force(),
-  "org.scala-lang" % "scala-library" % scalaVersion.value % "compile"
+  "org.scala-lang" % "scala-library" % scalaVersion.value % "compile",
+  "javax.servlet" % "javax.servlet-api" % "3.1.0" % "compile"
 )
 
 /**
