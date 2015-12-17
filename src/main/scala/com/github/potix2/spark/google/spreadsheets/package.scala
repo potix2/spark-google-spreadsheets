@@ -15,7 +15,8 @@ package com.github.potix2.spark.google
 
 import java.io.File
 
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 package object spreadsheets {
   /**
@@ -35,6 +36,33 @@ package object spreadsheets {
         worksheetName
       )(sqlContext)
       sqlContext.baseRelationToDataFrame(sheetRelation)
+    }
+  }
+
+  implicit class SpreadsheetDataFrame(dataFrame: DataFrame) {
+    def saveAsSheet(sheetName: String, parameters: Map[String, String] = Map()): Unit = {
+      val serviceAccountId = parameters("serviceAccountId")
+      val credentialPath = parameters("credentialPath")
+      val worksheetName = parameters("worksheetName")
+
+      implicit val context = SparkSpreadsheetService(serviceAccountId, new File(credentialPath))
+      val sheet = SparkSpreadsheetService.findSpreadsheet(sheetName)
+
+      val worksheet = SparkSpreadsheetService.findSpreadsheet(sheetName) match {
+        case Some(aSheet) => {
+          val columns = dataFrame.schema.fieldNames
+          //TODO: split worksheets
+          val w = aSheet.addWorksheet(worksheetName, columns.length, dataFrame.count().toInt)
+          w.insertHeaderRow(columns)
+          w
+        }
+        case None => throw new RuntimeException(s"no such a spreadsheet: $sheetName")
+      }
+
+      def convert(schema: StructType, row: Row): Map[String, Object] =
+        schema.iterator.zipWithIndex.map { case (f, i) => f.name -> row(i).asInstanceOf[AnyRef]} toMap
+
+      dataFrame.collect().foreach(row => worksheet.insertRow(convert(dataFrame.schema, row)))
     }
   }
 }

@@ -13,29 +13,47 @@
  */
 package com.github.potix2.spark.google.spreadsheets
 
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.SQLContext
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import java.io.File
 
-class SpreadsheetSuite extends FunSuite with BeforeAndAfterAll {
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.{Row, SQLContext}
+import org.scalatest.{BeforeAndAfter, FlatSpec}
+
+import scala.util.Random
+
+class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
   private val serviceAccountId = "53797494708-ds5v22b6cbpchrv2qih1vg8kru098k9i@developer.gserviceaccount.com"
   private val testCredentialPath = "src/test/resources/spark-google-spreadsheets-test-eb7b191d1e1d.p12"
 
   private var sqlContext: SQLContext = _
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
+  before {
     sqlContext = new SQLContext(new SparkContext("local[2]", "AvroSuite"))
   }
 
-  override protected def afterAll(): Unit = {
+  after {
+    sqlContext.sparkContext.stop()
+  }
+
+  def withEmptyWorksheet(testCode:(String) => Any): Unit = {
+    def deleteWorksheet(spreadSheetName: String, worksheetName: String): Unit = {
+      implicit val spreadSheetContext = SparkSpreadsheetService(serviceAccountId, new File(testCredentialPath))
+      for {
+        s <- SparkSpreadsheetService.findSpreadsheet(spreadSheetName)
+        w <- s.findWorksheet(worksheetName)
+      } yield w.entry.delete()
+    }
+
+    val workSheetName = Random.alphanumeric.take(16).mkString
     try {
-      sqlContext.sparkContext.stop()
-    } finally {
-      super.afterAll()
+      testCode(workSheetName)
+    }
+    finally {
+      deleteWorksheet("SpreadsheetSuite", workSheetName)
     }
   }
 
-  test("DSL test: case1") {
+  "A sheet" should "behave as a dataFrame" in {
     val results = sqlContext
     .sheet(
         serviceAccountId,
@@ -48,20 +66,7 @@ class SpreadsheetSuite extends FunSuite with BeforeAndAfterAll {
     assert(results.size === 15)
   }
 
-  test("DSL test: case2") {
-    val results = sqlContext
-    .sheet(
-        serviceAccountId,
-        testCredentialPath,
-        "SpreadsheetSuite",
-        "case2")
-    .select("id", "firstname", "lastname", "email")
-    .collect()
-
-    assert(results.size === 10)
-  }
-
-  test("DDL test") {
+  it should "create from DDL" in {
     sqlContext.sql(
       s"""
          |CREATE TEMPORARY TABLE SpreadsheetSuite
@@ -70,5 +75,31 @@ class SpreadsheetSuite extends FunSuite with BeforeAndAfterAll {
        """.stripMargin.replaceAll("\n", " "))
 
     assert(sqlContext.sql("SELECT id, firstname, lastname FROM SpreadsheetSuite").collect().size == 10)
+  }
+
+  trait PersonDataFrame {
+    val personsSchema = StructType(List(
+      StructField("id", IntegerType, true),
+      StructField("firstname", StringType, true),
+      StructField("lastname", StringType, true)))
+    val personsRows = Seq(Row(1, "Kathleen", "Cole"), Row(2, "Julia", "Richards"), Row(3, "Terry", "Black"))
+    val personsRDD = sqlContext.sparkContext.parallelize(personsRows)
+    val personsDF = sqlContext.createDataFrame(personsRDD, personsSchema)
+  }
+
+  "A dataFrame" should "save as a sheet" in new PersonDataFrame {
+    withEmptyWorksheet { workSheetName =>
+      personsDF.saveAsSheet("SpreadsheetSuite", Map(
+        "serviceAccountId" -> serviceAccountId,
+        "credentialPath" -> testCredentialPath,
+        "worksheetName" -> workSheetName))
+
+      val result = sqlContext.sheet(serviceAccountId, testCredentialPath, "SpreadsheetSuite", workSheetName).collect()
+
+      assert(result.size == 3)
+      assert(result(0).getString(0) == "1")
+      assert(result(0).getString(1) == "Kathleen")
+      assert(result(0).getString(2) == "Cole")
+    }
   }
 }

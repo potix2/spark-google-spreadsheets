@@ -74,7 +74,7 @@ object SparkSpreadsheetService {
   }
 
   case class SparkWorksheet(entry: WorksheetEntry) {
-    def insertHeaderRow(headerColumnNames: List[String])(implicit context: SparkSpreadsheetContext) = {
+    def insertHeaderRow(headerColumnNames: Seq[String])(implicit context: SparkSpreadsheetContext) = {
       val cellFeed = context.getFeed(entry.getCellFeedUrl, classOf[CellFeed])
       headerColumnNames.zipWithIndex.foreach { case(colName, i) => cellFeed.insert(new CellEntry(1, i + 1, colName)) }
     }
