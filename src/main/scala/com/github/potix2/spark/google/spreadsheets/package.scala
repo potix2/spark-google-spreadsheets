@@ -15,6 +15,7 @@ package com.github.potix2.spark.google
 
 import java.io.File
 
+import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.{SparkWorksheet, SparkSpreadsheet}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
@@ -39,29 +40,32 @@ package object spreadsheets {
     }
   }
 
+  /**
+   * Saves DataFrame as google spreadsheets.
+   */
   implicit class SpreadsheetDataFrame(dataFrame: DataFrame) {
+    private[spreadsheets] def convert(schema: StructType, row: Row): Map[String, Object] =
+      schema.iterator.zipWithIndex.map { case (f, i) => f.name -> row(i).asInstanceOf[AnyRef]} toMap
+
+    private[spreadsheets] def createWorksheet(spreadsheet: SparkSpreadsheet, name: String)(implicit context:SparkSpreadsheetService.SparkSpreadsheetContext): SparkWorksheet = {
+      val columns = dataFrame.schema.fieldNames
+      val worksheet = spreadsheet.addWorksheet(name, columns.length, dataFrame.count().toInt)
+      worksheet.insertHeaderRow(columns)
+
+      worksheet
+    }
+
     def saveAsSheet(sheetName: String, parameters: Map[String, String] = Map()): Unit = {
       val serviceAccountId = parameters("serviceAccountId")
       val credentialPath = parameters("credentialPath")
       val worksheetName = parameters("worksheetName")
 
       implicit val context = SparkSpreadsheetService(serviceAccountId, new File(credentialPath))
-      val sheet = SparkSpreadsheetService.findSpreadsheet(sheetName)
+      val spreadsheet = SparkSpreadsheetService.findSpreadsheet(sheetName)
+      if(!spreadsheet.isDefined)
+        throw new RuntimeException(s"no such a spreadsheet: $sheetName")
 
-      val worksheet = SparkSpreadsheetService.findSpreadsheet(sheetName) match {
-        case Some(aSheet) => {
-          val columns = dataFrame.schema.fieldNames
-          //TODO: split worksheets
-          val w = aSheet.addWorksheet(worksheetName, columns.length, dataFrame.count().toInt)
-          w.insertHeaderRow(columns)
-          w
-        }
-        case None => throw new RuntimeException(s"no such a spreadsheet: $sheetName")
-      }
-
-      def convert(schema: StructType, row: Row): Map[String, Object] =
-        schema.iterator.zipWithIndex.map { case (f, i) => f.name -> row(i).asInstanceOf[AnyRef]} toMap
-
+      val worksheet = createWorksheet(spreadsheet.get, worksheetName)
       dataFrame.collect().foreach(row => worksheet.insertRow(convert(dataFrame.schema, row)))
     }
   }
