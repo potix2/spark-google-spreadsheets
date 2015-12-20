@@ -14,35 +14,68 @@
 package com.github.potix2.spark.google.spreadsheets
 
 import java.io.File
-import java.util.Calendar
 
+import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.{SparkWorksheet, SparkSpreadsheet}
+import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider}
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
-import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, SchemaRelationProvider, RelationProvider}
+import org.apache.spark.sql.{Row, DataFrame, SQLContext, SaveMode}
 
 class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
-  final val DEFAULT_SPREADSHEET_NAME = "NewSparkSpreadsheet"
   final val DEFAULT_CREDENTIAL_PATH = "/etc/gdata/credential.p12"
 
   override def createRelation(sqlContext: SQLContext, parameters: Map[String, String]) = {
     createRelation(sqlContext, parameters, null)
   }
 
-  val DEFAULT_SERVICE_ACCOUNT_ID = "/etc/gdata/credential.p12"
-  private def defaultSpreadsheetName = DEFAULT_SPREADSHEET_NAME + Calendar.getInstance().getTime()
+  private[spreadsheets] def pathToSheetNames(parameters: Map[String, String]): (String, String) = {
+    val path = parameters.getOrElse("path", sys.error("'path' must be specified for spreadsheets."))
+    val elems = path.split('/')
+    if (elems.length < 2)
+      throw new Exception("'path' must be formed like '<spreadsheet>/<worksheet>'")
 
-  override def createRelation(sqlContext: SQLContext, parameters: Map[String, String], schema: StructType) = {
-    val serviceAccountId = parameters.getOrElse("serviceAccountId", sys.error("'serviceAccountId' must be specified for the google API account."))
-    val spreadsheetName = parameters.getOrElse("spreadsheet", defaultSpreadsheetName)
-    val worksheetName = parameters.getOrElse("worksheet", "NewWorksheet")
-    val credentialPath = parameters.getOrElse("credentialPath", DEFAULT_CREDENTIAL_PATH)
-
-    SpreadsheetRelation(
-      SparkSpreadsheetService(serviceAccountId, new File(credentialPath)),
-      spreadsheetName,
-      worksheetName
-    )(sqlContext)
+    (elems(0), elems(1))
   }
 
-  override def createRelation(sqlContext: SQLContext, mode: SaveMode, parameters: Map[String, String], data: DataFrame): BaseRelation = null
+  override def createRelation(sqlContext: SQLContext, parameters: Map[String, String], schema: StructType) = {
+    val (spreadsheetName, worksheetName) = pathToSheetNames(parameters)
+    val context = createSpreadsheetContext(parameters)
+    createRelation(sqlContext, context, spreadsheetName, worksheetName)
+  }
+
+  private[spreadsheets] def convert(schema: StructType, row: Row): Map[String, Object] =
+    schema.iterator.zipWithIndex.map { case (f, i) => f.name -> row(i).asInstanceOf[AnyRef]} toMap
+
+  private[spreadsheets] def createWorksheet(dataFrame: DataFrame, spreadsheet: SparkSpreadsheet, name: String)
+                                           (implicit context:SparkSpreadsheetService.SparkSpreadsheetContext): SparkWorksheet = {
+    val columns = dataFrame.schema.fieldNames
+    val worksheet = spreadsheet.addWorksheet(name, columns.length, dataFrame.count().toInt)
+    worksheet.insertHeaderRow(columns)
+
+    worksheet
+  }
+
+  override def createRelation(sqlContext: SQLContext, mode: SaveMode, parameters: Map[String, String], data: DataFrame): BaseRelation = {
+    val (spreadsheetName, worksheetName) = pathToSheetNames(parameters)
+
+    implicit val context = createSpreadsheetContext(parameters)
+    val spreadsheet = SparkSpreadsheetService.findSpreadsheet(spreadsheetName)
+    if(!spreadsheet.isDefined)
+      throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
+
+    val worksheet = createWorksheet(data, spreadsheet.get, worksheetName)
+    data.collect().foreach(row => worksheet.insertRow(convert(data.schema, row)))
+    createRelation(sqlContext, context, spreadsheetName, worksheetName)
+  }
+
+  private[spreadsheets] def createSpreadsheetContext(parameters: Map[String, String]) = {
+    val serviceAccountId = parameters.getOrElse("serviceAccountId", sys.error("'serviceAccountId' must be specified for the google API account."))
+    val credentialPath = parameters.getOrElse("credentialPath", DEFAULT_CREDENTIAL_PATH)
+    SparkSpreadsheetService(serviceAccountId, new File(credentialPath))
+  }
+
+  private[spreadsheets] def createRelation(sqlContext: SQLContext,
+                                           context: SparkSpreadsheetService.SparkSpreadsheetContext,
+                                           spreadsheetName: String,
+                                           worksheetName: String) =
+    SpreadsheetRelation(context, spreadsheetName, worksheetName)(sqlContext)
 }

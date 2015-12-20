@@ -13,60 +13,22 @@
  */
 package com.github.potix2.spark.google
 
-import java.io.File
-
-import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.{SparkWorksheet, SparkSpreadsheet}
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql._
 
 package object spreadsheets {
   /**
-   * Add a method, `sheet`, to SQLContext that allows reading Google Spreadsheets data.
-   * @param sqlContext
+   * Add a method, `spreadsheet`, to DataFrameReader that allows reading Google Spreadsheets data.
    */
-  implicit class SpreadsheetContext(sqlContext: SQLContext) extends Serializable {
-    def sheet(
-               serviceAccountId: String,
-               credentialPath: String,
-               spreadsheetName: String,
-               worksheetName: String) = {
-      val context = SparkSpreadsheetService(serviceAccountId, new File(credentialPath))
-      val sheetRelation = SpreadsheetRelation(
-        context,
-        spreadsheetName,
-        worksheetName
-      )(sqlContext)
-      sqlContext.baseRelationToDataFrame(sheetRelation)
-    }
+  implicit class SpreadsheetDataFrameReader(reader: DataFrameReader) {
+    def spreadsheet: String => DataFrame =
+      reader.format("com.github.potix2.spark.google.spreadsheets").load
   }
 
   /**
-   * Saves DataFrame as google spreadsheets.
+   * Add a method, `spreadsheet`, to DataFrameWriter that allows you to write Google Spreadsheets data.
    */
-  implicit class SpreadsheetDataFrame(dataFrame: DataFrame) {
-    private[spreadsheets] def convert(schema: StructType, row: Row): Map[String, Object] =
-      schema.iterator.zipWithIndex.map { case (f, i) => f.name -> row(i).asInstanceOf[AnyRef]} toMap
-
-    private[spreadsheets] def createWorksheet(spreadsheet: SparkSpreadsheet, name: String)(implicit context:SparkSpreadsheetService.SparkSpreadsheetContext): SparkWorksheet = {
-      val columns = dataFrame.schema.fieldNames
-      val worksheet = spreadsheet.addWorksheet(name, columns.length, dataFrame.count().toInt)
-      worksheet.insertHeaderRow(columns)
-
-      worksheet
-    }
-
-    def saveAsSheet(sheetName: String, parameters: Map[String, String] = Map()): Unit = {
-      val serviceAccountId = parameters("serviceAccountId")
-      val credentialPath = parameters("credentialPath")
-      val worksheetName = parameters("worksheetName")
-
-      implicit val context = SparkSpreadsheetService(serviceAccountId, new File(credentialPath))
-      val spreadsheet = SparkSpreadsheetService.findSpreadsheet(sheetName)
-      if(!spreadsheet.isDefined)
-        throw new RuntimeException(s"no such a spreadsheet: $sheetName")
-
-      val worksheet = createWorksheet(spreadsheet.get, worksheetName)
-      dataFrame.collect().foreach(row => worksheet.insertRow(convert(dataFrame.schema, row)))
-    }
+  implicit class SpreadsheetDataFrameWriter(writer: DataFrameWriter) {
+    def spreadsheet: String => Unit =
+      writer.format("com.github.potix2.spark.google.spreadsheets").save
   }
 }

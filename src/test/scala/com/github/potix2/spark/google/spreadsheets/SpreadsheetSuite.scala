@@ -28,7 +28,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
 
   private var sqlContext: SQLContext = _
   before {
-    sqlContext = new SQLContext(new SparkContext("local[2]", "AvroSuite"))
+    sqlContext = new SQLContext(new SparkContext("local[2]", "SpreadsheetSuite"))
   }
 
   after {
@@ -54,14 +54,12 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
   }
 
   "A sheet" should "behave as a dataFrame" in {
-    val results = sqlContext
-    .sheet(
-        serviceAccountId,
-        testCredentialPath,
-        "SpreadsheetSuite",
-        "case1")
-    .select("col1")
-    .collect()
+    val results = sqlContext.read
+      .option("serviceAccountId", serviceAccountId)
+      .option("credentialPath", testCredentialPath)
+      .spreadsheet("SpreadsheetSuite/case1")
+      .select("col1")
+      .collect()
 
     assert(results.size === 15)
   }
@@ -71,7 +69,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
       s"""
          |CREATE TEMPORARY TABLE SpreadsheetSuite
          |USING com.github.potix2.spark.google.spreadsheets
-         |OPTIONS (spreadsheet "SpreadsheetSuite", worksheet "case2", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+         |OPTIONS (path "SpreadsheetSuite/case2", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
        """.stripMargin.replaceAll("\n", " "))
 
     assert(sqlContext.sql("SELECT id, firstname, lastname FROM SpreadsheetSuite").collect().size == 10)
@@ -88,13 +86,18 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
   }
 
   "A dataFrame" should "save as a sheet" in new PersonDataFrame {
+    import com.github.potix2.spark.google.spreadsheets._
     withEmptyWorksheet { workSheetName =>
-      personsDF.saveAsSheet("SpreadsheetSuite", Map(
-        "serviceAccountId" -> serviceAccountId,
-        "credentialPath" -> testCredentialPath,
-        "worksheetName" -> workSheetName))
+      personsDF.write
+        .option("serviceAccountId", serviceAccountId)
+        .option("credentialPath", testCredentialPath)
+        .spreadsheet(s"SpreadsheetSuite/$workSheetName")
 
-      val result = sqlContext.sheet(serviceAccountId, testCredentialPath, "SpreadsheetSuite", workSheetName).collect()
+      val result = sqlContext.read
+        .option("serviceAccountId", serviceAccountId)
+        .option("credentialPath", testCredentialPath)
+        .spreadsheet(s"SpreadsheetSuite/$workSheetName")
+        .collect()
 
       assert(result.size == 3)
       assert(result(0).getString(0) == "1")
