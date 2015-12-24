@@ -30,16 +30,17 @@ case class SpreadsheetRelation protected[spark] (
 
   override def schema: StructType = userSchema.getOrElse(inferSchema())
 
-  private lazy val rows: Seq[Map[String, String]] = {
-    implicit val ctx = context
-    findSpreadsheet(spreadsheetName) match {
-      case Some(aSheet) => aSheet.findWorksheet(worksheetName) match {
-        case Some(aWorksheet) => aWorksheet.rows
-        case None => throw new RuntimeException(s"no such a worksheet: $worksheetName")
-      }
-      case None => throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
+  private lazy val rows: Seq[Map[String, String]] =
+    findWorksheet(spreadsheetName, worksheetName)(context) match {
+      case Right(aWorksheet) => aWorksheet.rows(context)
+      case Left(e) => throw e
     }
-  }
+
+  private[spreadsheets] def findWorksheet(spreadsheetName: String, worksheetName: String)(implicit ctx: SparkSpreadsheetContext): Either[Throwable, SparkWorksheet] =
+    for {
+      sheet <- findSpreadsheet(spreadsheetName).toRight(new RuntimeException(s"no such a worksheet: $worksheetName")).right
+      worksheet <- sheet.findWorksheet(worksheetName).toRight(new RuntimeException(s"no such a spreadsheet: $spreadsheetName")).right
+    } yield worksheet
 
   override def buildScan(): RDD[Row] = {
     val aSchema = schema
@@ -51,7 +52,14 @@ case class SpreadsheetRelation protected[spark] (
   }
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
-    throw new NotImplementedError()
+    val columns = data.schema.fieldNames
+    findWorksheet(spreadsheetName, worksheetName)(context) match {
+      case Right(w) => {
+        w.insertHeaderRow(columns)(context)
+        data.collect().foreach(row => w.insertRow(Util.convert(data.schema, row))(context))
+      }
+      case Left(e) => throw e
+    }
   }
 
   private def inferSchema(): StructType =

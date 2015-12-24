@@ -87,17 +87,6 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
     assert(results.size === 15)
   }
 
-  it should "create from DDL" in {
-    sqlContext.sql(
-      s"""
-         |CREATE TEMPORARY TABLE SpreadsheetSuite
-         |USING com.github.potix2.spark.google.spreadsheets
-         |OPTIONS (path "SpreadsheetSuite/case2", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
-       """.stripMargin.replaceAll("\n", " "))
-
-    assert(sqlContext.sql("SELECT id, firstname, lastname FROM SpreadsheetSuite").collect().size == 10)
-  }
-
   trait PersonDataFrame {
     val personsSchema = StructType(List(
       StructField("id", IntegerType, true),
@@ -129,7 +118,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
     }
   }
 
-  it should "create empty table" in {
+  "A table" should "be created from DDL with schema" in {
     withNewEmptyWorksheet { worksheetName =>
       sqlContext.sql(
         s"""
@@ -143,4 +132,36 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
     }
   }
 
+  it should "be created from DDL with infered schema" in {
+    sqlContext.sql(
+      s"""
+         |CREATE TEMPORARY TABLE SpreadsheetSuite
+         |USING com.github.potix2.spark.google.spreadsheets
+         |OPTIONS (path "SpreadsheetSuite/case2", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+       """.stripMargin.replaceAll("\n", " "))
+
+    assert(sqlContext.sql("SELECT id, firstname, lastname FROM SpreadsheetSuite").collect().size == 10)
+  }
+
+  it should "be inserted from sql" in {
+    withNewEmptyWorksheet { worksheetName =>
+      sqlContext.sql(
+        s"""
+           |CREATE TEMPORARY TABLE accesslog
+           |(id string, firstname string, lastname string, email string, country string, ipaddress string)
+           |USING com.github.potix2.spark.google.spreadsheets
+           |OPTIONS (path "SpreadsheetSuite/$worksheetName", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+       """.stripMargin.replaceAll("\n", " "))
+
+      sqlContext.sql(
+        s"""
+           |CREATE TEMPORARY TABLE SpreadsheetSuite
+           |USING com.github.potix2.spark.google.spreadsheets
+           |OPTIONS (path "SpreadsheetSuite/case2", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+       """.stripMargin.replaceAll("\n", " "))
+
+      sqlContext.sql("INSERT OVERWRITE TABLE accesslog SELECT * FROM SpreadsheetSuite")
+      assert(sqlContext.sql("SELECT id, firstname, lastname FROM accesslog").collect().size == 10)
+    }
+  }
 }

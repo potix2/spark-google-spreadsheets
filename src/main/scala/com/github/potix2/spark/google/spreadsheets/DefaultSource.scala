@@ -15,10 +15,10 @@ package com.github.potix2.spark.google.spreadsheets
 
 import java.io.File
 
-import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.{SparkWorksheet, SparkSpreadsheet}
+import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.{SparkSpreadsheet, SparkWorksheet}
 import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider}
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{Row, DataFrame, SQLContext, SaveMode}
+import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 
 class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
   final val DEFAULT_CREDENTIAL_PATH = "/etc/gdata/credential.p12"
@@ -44,9 +44,6 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 
 
   override def createRelation(sqlContext: SQLContext, mode: SaveMode, parameters: Map[String, String], data: DataFrame): BaseRelation = {
-    def convert(schema: StructType, row: Row): Map[String, Object] =
-      schema.iterator.zipWithIndex.map { case (f, i) => f.name -> row(i).asInstanceOf[AnyRef]} toMap
-
     def createWorksheet(spreadsheet: SparkSpreadsheet, worksheetName: String)
                        (implicit context:SparkSpreadsheetService.SparkSpreadsheetContext): SparkWorksheet = {
       val columns = data.schema.fieldNames
@@ -63,7 +60,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
       throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
 
     val worksheet = createWorksheet(spreadsheet.get, worksheetName)
-    data.collect().foreach(row => worksheet.insertRow(convert(data.schema, row)))
+    data.collect().foreach(row => worksheet.insertRow(Util.convert(data.schema, row)))
     createRelation(sqlContext, context, spreadsheetName, worksheetName, data.schema)
   }
 
