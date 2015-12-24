@@ -22,12 +22,13 @@ import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 case class SpreadsheetRelation protected[spark] (
                                                   context:SparkSpreadsheetContext,
                                                   spreadsheetName: String,
-                                                  worksheetName: String)(@transient val sqlContext: SQLContext)
+                                                  worksheetName: String,
+                                                  userSchema: Option[StructType] = None)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService._
 
-  override def schema: StructType = inferSchema()
+  override def schema: StructType = userSchema.getOrElse(inferSchema())
 
   private lazy val rows: Seq[Map[String, String]] = {
     implicit val ctx = context
@@ -41,10 +42,10 @@ case class SpreadsheetRelation protected[spark] (
   }
 
   override def buildScan(): RDD[Row] = {
-    val schema = inferSchema()
+    val aSchema = schema
     sqlContext.sparkContext.makeRDD(rows).mapPartitions { iter =>
       iter.map { m =>
-        Row.fromSeq(schema.fields.map(field => m(field.name)))
+        Row.fromSeq(aSchema.fields.map(field => m(field.name)))
       }
     }
   }

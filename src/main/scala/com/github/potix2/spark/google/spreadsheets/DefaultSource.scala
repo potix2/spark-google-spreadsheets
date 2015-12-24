@@ -39,7 +39,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
   override def createRelation(sqlContext: SQLContext, parameters: Map[String, String], schema: StructType) = {
     val (spreadsheetName, worksheetName) = pathToSheetNames(parameters)
     val context = createSpreadsheetContext(parameters)
-    createRelation(sqlContext, context, spreadsheetName, worksheetName)
+    createRelation(sqlContext, context, spreadsheetName, worksheetName, schema)
   }
 
 
@@ -64,7 +64,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 
     val worksheet = createWorksheet(spreadsheet.get, worksheetName)
     data.collect().foreach(row => worksheet.insertRow(convert(data.schema, row)))
-    createRelation(sqlContext, context, spreadsheetName, worksheetName)
+    createRelation(sqlContext, context, spreadsheetName, worksheetName, data.schema)
   }
 
   private[spreadsheets] def createSpreadsheetContext(parameters: Map[String, String]) = {
@@ -76,6 +76,19 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
   private[spreadsheets] def createRelation(sqlContext: SQLContext,
                                            context: SparkSpreadsheetService.SparkSpreadsheetContext,
                                            spreadsheetName: String,
-                                           worksheetName: String) =
-    SpreadsheetRelation(context, spreadsheetName, worksheetName)(sqlContext)
+                                           worksheetName: String,
+                                           schema: StructType): SpreadsheetRelation =
+    if (schema == null) {
+      createRelation(sqlContext, context, spreadsheetName, worksheetName, None)
+    }
+    else {
+      createRelation(sqlContext, context, spreadsheetName, worksheetName, Some(schema))
+    }
+
+  private[spreadsheets] def createRelation(sqlContext: SQLContext,
+                                           context: SparkSpreadsheetService.SparkSpreadsheetContext,
+                                           spreadsheetName: String,
+                                           worksheetName: String,
+                                           schema: Option[StructType]): SpreadsheetRelation =
+    SpreadsheetRelation(context, spreadsheetName, worksheetName, schema)(sqlContext)
 }

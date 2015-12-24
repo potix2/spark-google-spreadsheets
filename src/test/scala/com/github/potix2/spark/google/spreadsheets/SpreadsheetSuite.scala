@@ -15,6 +15,7 @@ package com.github.potix2.spark.google.spreadsheets
 
 import java.io.File
 
+import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.{SparkWorksheet, SparkSpreadsheetContext}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.apache.spark.sql.{Row, SQLContext}
@@ -35,15 +36,37 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
     sqlContext.sparkContext.stop()
   }
 
-  def withEmptyWorksheet(testCode:(String) => Any): Unit = {
-    def deleteWorksheet(spreadSheetName: String, worksheetName: String): Unit = {
-      implicit val spreadSheetContext = SparkSpreadsheetService(serviceAccountId, new File(testCredentialPath))
-      for {
-        s <- SparkSpreadsheetService.findSpreadsheet(spreadSheetName)
-        w <- s.findWorksheet(worksheetName)
-      } yield w.entry.delete()
-    }
+  private[spreadsheets] def deleteWorksheet(spreadSheetName: String, worksheetName: String)
+                                           (implicit spreadSheetContext: SparkSpreadsheetContext): Unit = {
+    for {
+      s <- SparkSpreadsheetService.findSpreadsheet(spreadSheetName)
+      w <- s.findWorksheet(worksheetName)
+    } yield w.entry.delete()
+  }
 
+  private[spreadsheets] def addWorksheet(spreadSheetName: String, worksheetName: String)
+                                        (implicit spreadSheetContext: SparkSpreadsheetContext):Option[SparkWorksheet] = {
+    for {
+      s <- SparkSpreadsheetService.findSpreadsheet(spreadSheetName)
+      w <- Some(s.addWorksheet(worksheetName, 1000, 1000))
+    } yield w
+  }
+
+  def withNewEmptyWorksheet(testCode:(String) => Any): Unit = {
+    implicit val spreadSheetContext = SparkSpreadsheetService(serviceAccountId, new File(testCredentialPath))
+    val workSheetName = Random.alphanumeric.take(16).mkString
+    val worksheet = addWorksheet("SpreadsheetSuite", workSheetName)
+    try {
+      testCode(workSheetName)
+    }
+    finally {
+      worksheet.get.entry.delete()
+      //deleteWorksheet("SpreadsheetSuite", workSheetName)
+    }
+  }
+
+  def withEmptyWorksheet(testCode:(String) => Any): Unit = {
+    implicit val spreadSheetContext = SparkSpreadsheetService(serviceAccountId, new File(testCredentialPath))
     val workSheetName = Random.alphanumeric.take(16).mkString
     try {
       testCode(workSheetName)
@@ -105,4 +128,19 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
       assert(result(0).getString(2) == "Cole")
     }
   }
+
+  it should "create empty table" in {
+    withNewEmptyWorksheet { worksheetName =>
+      sqlContext.sql(
+        s"""
+           |CREATE TEMPORARY TABLE people
+           |(id int, firstname string, lastname string)
+           |USING com.github.potix2.spark.google.spreadsheets
+           |OPTIONS (path "SpreadsheetSuite/$worksheetName", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+       """.stripMargin.replaceAll("\n", " "))
+
+      assert(sqlContext.sql("SELECT * FROM people").collect().size == 0)
+    }
+  }
+
 }
