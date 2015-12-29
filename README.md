@@ -12,7 +12,7 @@ Google Spreadsheets datasource for [SparkSQL and DataFrames](http://spark.apache
 Using SBT:
 
 ```
-libraryDependenicies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.1.1"
+libraryDependenicies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.2.0"
 ```
 
 Using Maven:
@@ -21,7 +21,7 @@ Using Maven:
 <dependency>
   <groupId>com.github.potix2<groupId>
   <artifactId>spark-google-spreadsheets_2.11</artifactId>
-  <version>0.1.1</version>
+  <version>0.2.0</version>
 </dependency>
 ```
 
@@ -31,8 +31,7 @@ Using Maven:
 CREATE TABLE cars
 USING com.github.potix2.spark.google.spreadsheets
 OPTIONS (
-    spreadsheet "YourSpreadsheet",
-    worksheet "worksheet1",
+    path "YourSpreadsheet/worksheet1",
     serviceAccountId "xxxxxx@developer.gserviceaccount.com",
     credentialPath "/path/to/credentail.p12"
 )
@@ -44,16 +43,22 @@ OPTIONS (
 import org.apache.spark.sql.SQLContext
 
 val sqlContext = new SQLContext(sc)
+
+// Creates a DataFrame from a specified worksheet
 val df = sqlContext.read.
-format("com.github.potix2.spark.google.spreadsheets").
-option("spreadsheet", "YourSpreadsheet").
-option("worksheet", "worksheet1").
-option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
-option("credentialPath", "/path/to/credentail.p12").
-load("YourSpreadsheet")
+    format("com.github.potix2.spark.google.spreadsheets").
+    option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
+    option("credentialPath", "/path/to/credentail.p12").
+    load("YourSpreadsheet/worksheet1")
+
+// Saves a DataFrame to a new worksheet
+df.write.
+    format("com.github.potix2.spark.google.spreadsheets").
+    option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
+    option("credentialPath", "/path/to/credentail.p12").
+    save("YourSpreadsheet/"newWorksheet)
 
 ```
-
 
 ## License
 

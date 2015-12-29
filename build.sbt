@@ -6,7 +6,7 @@ scalaVersion := "2.11.7"
 
 crossScalaVersions := Seq("2.10.6", "2.11.7")
 
-version := "0.2.0-SNAPSHOT"
+version := "0.3.0-SNAPSHOT"
 
 spName := "potix2/spark-google-spreadsheets"
 
