@@ -56,7 +56,7 @@ df.write.
     format("com.github.potix2.spark.google.spreadsheets").
     option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
     option("credentialPath", "/path/to/credentail.p12").
-    save("YourSpreadsheet/"newWorksheet)
+    save("YourSpreadsheet/newWorksheet")
 
 ```
 
