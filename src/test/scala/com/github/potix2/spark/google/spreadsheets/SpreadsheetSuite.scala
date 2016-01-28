@@ -61,7 +61,6 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
     }
     finally {
       worksheet.get.entry.delete()
-      //deleteWorksheet("SpreadsheetSuite", workSheetName)
     }
   }
 

@@ -52,6 +52,10 @@ case class SpreadsheetRelation protected[spark] (
   }
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
+    if(!overwrite) {
+      sys.error("Spreadsheet tables only support INSERT OVERWRITE for now.")
+    }
+
     val columns = data.schema.fieldNames
     findWorksheet(spreadsheetName, worksheetName)(context) match {
       case Right(w) => {
