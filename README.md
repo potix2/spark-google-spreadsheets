@@ -11,7 +11,7 @@ Google Spreadsheets datasource for [SparkSQL and DataFrames](http://spark.apache
 Using SBT:
 
 ```
-libraryDependenicies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.3.0"
+libraryDependenicies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.3.1"
 ```
 
 Using Maven:
@@ -20,7 +20,7 @@ Using Maven:
 <dependency>
   <groupId>com.github.potix2<groupId>
   <artifactId>spark-google-spreadsheets_2.11</artifactId>
-  <version>0.3.0</version>
+  <version>0.3.1</version>
 </dependency>
 ```
 
