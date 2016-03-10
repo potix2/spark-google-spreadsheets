@@ -17,7 +17,7 @@ import java.io.File
 
 import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.{SparkWorksheet, SparkSpreadsheetContext}
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SQLContext}
 import org.scalatest.{BeforeAndAfter, FlatSpec}
 
@@ -75,7 +75,9 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
     }
   }
 
-  "A sheet" should "behave as a dataFrame" in {
+  behavior of "A sheet"
+
+  it should "behave as a dataFrame" in {
     val results = sqlContext.read
       .option("serviceAccountId", serviceAccountId)
       .option("credentialPath", testCredentialPath)
@@ -84,6 +86,26 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
       .collect()
 
     assert(results.size === 15)
+  }
+
+  it should "have a value as long" in {
+    val schema = StructType(Seq(
+      StructField("col1", DataTypes.LongType),
+      StructField("col2", DataTypes.StringType),
+      StructField("col3", DataTypes.StringType)
+    ))
+
+    val results = sqlContext.read
+      .option("serviceAccountId", serviceAccountId)
+      .option("credentialPath", testCredentialPath)
+      .schema(schema)
+      .spreadsheet("SpreadsheetSuite/case1")
+      .select("col1", "col2", "col3")
+      .collect()
+
+    assert(results.head.getLong(0) === 1L)
+    assert(results.head.getString(1) === "2")
+    assert(results.head.getString(2) === "3")
   }
 
   trait PersonDataFrame {

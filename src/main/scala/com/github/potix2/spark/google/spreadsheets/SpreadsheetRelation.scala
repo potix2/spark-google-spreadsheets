@@ -14,6 +14,7 @@
 package com.github.potix2.spark.google.spreadsheets
 
 import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
+import com.github.potix2.spark.google.spreadsheets.util._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
@@ -46,7 +47,14 @@ case class SpreadsheetRelation protected[spark] (
     val aSchema = schema
     sqlContext.sparkContext.makeRDD(rows).mapPartitions { iter =>
       iter.map { m =>
-        Row.fromSeq(aSchema.fields.map(field => m(field.name)))
+        var index = 0
+        val rowArray = new Array[Any](aSchema.fields.length)
+        while(index < aSchema.fields.length) {
+          val field = aSchema.fields(index)
+          rowArray(index) = TypeCast.castTo(m(field.name), field.dataType, field.nullable)
+          index += 1
+        }
+        Row.fromSeq(rowArray)
       }
     }
   }
