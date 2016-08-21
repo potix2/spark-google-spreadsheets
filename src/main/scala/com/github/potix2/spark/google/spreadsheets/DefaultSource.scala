@@ -15,7 +15,6 @@ package com.github.potix2.spark.google.spreadsheets
 
 import java.io.File
 
-import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.{SparkSpreadsheet, SparkWorksheet}
 import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
@@ -44,23 +43,13 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 
 
   override def createRelation(sqlContext: SQLContext, mode: SaveMode, parameters: Map[String, String], data: DataFrame): BaseRelation = {
-    def createWorksheet(spreadsheet: SparkSpreadsheet, worksheetName: String)
-                       (implicit context:SparkSpreadsheetService.SparkSpreadsheetContext): SparkWorksheet = {
-      val columns = data.schema.fieldNames
-      val worksheet = spreadsheet.addWorksheet(worksheetName, columns.length, data.count().toInt)
-      worksheet.insertHeaderRow(columns)
-
-      worksheet
-    }
-
     val (spreadsheetName, worksheetName) = pathToSheetNames(parameters)
     implicit val context = createSpreadsheetContext(parameters)
     val spreadsheet = SparkSpreadsheetService.findSpreadsheet(spreadsheetName)
     if(!spreadsheet.isDefined)
       throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
 
-    val worksheet = createWorksheet(spreadsheet.get, worksheetName)
-    data.collect().foreach(row => worksheet.insertRow(Util.convert(data.schema, row)))
+    spreadsheet.get.addWorksheet(worksheetName, data.schema, data.collect().toList, Util.toRowData)
     createRelation(sqlContext, context, spreadsheetName, worksheetName, data.schema)
   }
 
