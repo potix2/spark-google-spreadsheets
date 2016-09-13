@@ -4,6 +4,14 @@ Google Spreadsheets datasource for [SparkSQL and DataFrames](http://spark.apache
 
 [![Build Status](https://travis-ci.org/potix2/spark-google-spreadsheets.svg?branch=master)](https://travis-ci.org/potix2/spark-google-spreadsheets)
 
+## Notice
+
+The latest version (0.4.0) breaks compatibility with previous version. You must
+use a ** spreadsheetId ** to identify which spreadsheets is to be accessed or altered.
+On older versions a spreadsheet name is used.
+
+If you don't know spreadsheetId, please read the [Introduction to the Google Sheets API v4](https://developers.google.com/sheets/guides/concepts).
+
 ## Requirements
 
 ## Linking
@@ -11,7 +19,7 @@ Google Spreadsheets datasource for [SparkSQL and DataFrames](http://spark.apache
 Using SBT:
 
 ```
-libraryDependenicies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.3.1"
+libraryDependenicies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.4.0"
 ```
 
 Using Maven:
@@ -20,7 +28,7 @@ Using Maven:
 <dependency>
   <groupId>com.github.potix2<groupId>
   <artifactId>spark-google-spreadsheets_2.11</artifactId>
-  <version>0.3.1</version>
+  <version>0.4.0</version>
 </dependency>
 ```
 
@@ -30,7 +38,7 @@ Using Maven:
 CREATE TABLE cars
 USING com.github.potix2.spark.google.spreadsheets
 OPTIONS (
-    path "YourSpreadsheet/worksheet1",
+    path "<spreadsheetId>/worksheet1",
     serviceAccountId "xxxxxx@developer.gserviceaccount.com",
     credentialPath "/path/to/credentail.p12"
 )
@@ -48,20 +56,20 @@ val df = sqlContext.read.
     format("com.github.potix2.spark.google.spreadsheets").
     option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
     option("credentialPath", "/path/to/credentail.p12").
-    load("YourSpreadsheet/worksheet1")
+    load("<spreadsheetId>/worksheet1")
 
 // Saves a DataFrame to a new worksheet
 df.write.
     format("com.github.potix2.spark.google.spreadsheets").
     option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
     option("credentialPath", "/path/to/credentail.p12").
-    save("YourSpreadsheet/newWorksheet")
+    save("<spreadsheetId>/newWorksheet")
 
 ```
 
 ## License
 
-Copyright 2015, Katsunori Kanda
+Copyright 2016, Katsunori Kanda
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
