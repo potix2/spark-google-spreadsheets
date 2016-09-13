@@ -33,7 +33,7 @@ case class SpreadsheetRelation protected[spark] (
 
   private lazy val rows: Seq[Map[String, String]] =
     findWorksheet(spreadsheetName, worksheetName)(context) match {
-      case Right(aWorksheet) => aWorksheet.rows(context)
+      case Right(aWorksheet) => aWorksheet.rows
       case Left(e) => throw e
     }
 
@@ -64,13 +64,11 @@ case class SpreadsheetRelation protected[spark] (
       sys.error("Spreadsheet tables only support INSERT OVERWRITE for now.")
     }
 
-    val columns = data.schema.fieldNames
     findWorksheet(spreadsheetName, worksheetName)(context) match {
-      case Right(w) => {
-        w.insertHeaderRow(columns)(context)
-        data.collect().foreach(row => w.insertRow(Util.convert(data.schema, row))(context))
-      }
-      case Left(e) => throw e
+      case Right(w) =>
+        w.updateCells(data.schema, data.collect().toList, Util.toRowData)
+      case Left(e) =>
+        throw e
     }
   }
 

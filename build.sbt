@@ -2,11 +2,11 @@ name := "spark-google-spreadsheets"
 
 organization := "com.github.potix2"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
-crossScalaVersions := Seq("2.10.6", "2.11.7")
+crossScalaVersions := Seq("2.10.6", "2.11.8")
 
-version := "0.3.1-SNAPSHOT"
+version := "0.4.0-SNAPSHOT"
 
 spName := "potix2/spark-google-spreadsheets"
 
@@ -16,7 +16,7 @@ spIncludeMaven := true
 
 spIgnoreProvided := true
 
-sparkVersion := "1.5.0"
+sparkVersion := "1.6.2"
 
 val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 
@@ -27,9 +27,10 @@ sparkComponents := Seq("sql")
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.5" % "provided",
   "org.scalatest" %% "scalatest" % "2.2.1" % "test",
-  ("com.google.api-client" % "google-api-client" % "1.20.0").
+  ("com.google.api-client" % "google-api-client" % "1.22.0").
     exclude("com.google.guava", "guava-jdk5"),
-  "com.google.gdata" % "core" % "1.47.1"
+  "com.google.oauth-client" % "google-oauth-client-jetty" % "1.22.0",
+  "com.google.apis" % "google-api-services-sheets" % "v4-rev18-1.22.0"
 )
 
 libraryDependencies ++= Seq(
