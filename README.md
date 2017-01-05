@@ -26,7 +26,7 @@ Using Maven:
 
 ```xml
 <dependency>
-  <groupId>com.github.potix2<groupId>
+  <groupId>com.github.potix2</groupId>
   <artifactId>spark-google-spreadsheets_2.11</artifactId>
   <version>0.4.0</version>
 </dependency>
