@@ -14,6 +14,15 @@ If you don't know spreadsheetId, please read the [Introduction to the Google She
 
 ## Requirements
 
+This library has different versions of Spark 1.6+, and 2.0+:
+
+### Latest compatible versions
+
+| This library | Spark Version |
+| ------------ | ------------- |
+| 0.5.x        | 2.0.x         |
+| 0.4.x        | 1.6.x         |
+
 ## Linking
 
 Using SBT:
