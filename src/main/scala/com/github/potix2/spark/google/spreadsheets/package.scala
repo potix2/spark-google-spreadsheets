@@ -27,7 +27,7 @@ package object spreadsheets {
   /**
    * Add a method, `spreadsheet`, to DataFrameWriter that allows you to write Google Spreadsheets data.
    */
-  implicit class SpreadsheetDataFrameWriter(writer: DataFrameWriter) {
+  implicit class SpreadsheetDataFrameWriter[T](writer: DataFrameWriter[T]) {
     def spreadsheet: String => Unit =
       writer.format("com.github.potix2.spark.google.spreadsheets").save
   }

@@ -6,7 +6,7 @@ scalaVersion := "2.11.8"
 
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 
-version := "0.4.0-SNAPSHOT"
+version := "0.5.0-SNAPSHOT"
 
 spName := "potix2/spark-google-spreadsheets"
 
@@ -16,7 +16,7 @@ spIncludeMaven := true
 
 spIgnoreProvided := true
 
-sparkVersion := "1.6.2"
+sparkVersion := "2.0.2"
 
 val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 
