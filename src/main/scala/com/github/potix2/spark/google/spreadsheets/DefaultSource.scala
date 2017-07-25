@@ -57,11 +57,9 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 
 
   private[spreadsheets] def createSpreadsheetContext(parameters: Map[String, String]) = {
-
-    val serviceAccountId = parameters.getOrElse("serviceAccountId", sys.error("'serviceAccountId' must be specified for the google API account."))
     val client_json:String = parameters.getOrElse("client_json", sys.error("'credentialString' must be specified for the google API account."))
 
-    SparkSpreadsheetService(serviceAccountId, client_json)
+    SparkSpreadsheetService(client_json)
   }
 
   private[spreadsheets] def createRelation(sqlContext: SQLContext,

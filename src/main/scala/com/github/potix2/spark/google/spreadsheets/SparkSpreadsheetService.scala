@@ -37,19 +37,19 @@ object SparkSpreadsheetService {
   private val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
   private val JSON_FACTORY: JacksonFactory = JacksonFactory.getDefaultInstance()
 
-  case class SparkSpreadsheetContext(serviceAccountId: String, client_json: String) {
+  case class SparkSpreadsheetContext(client_json: String) {
 
-    private val credential = authorize(serviceAccountId, client_json)
+    private val credential = authorize(client_json)
     lazy val service =
       new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
         .setApplicationName(APP_NAME)
         .build()
 
 
-    private def authorize(serviceAccountId: String, client_json: String): GoogleCredential = {
+    private def authorize(credential_json: String): GoogleCredential = {
 
       // Reading credential json string
-      val in :InputStream = new ByteArrayInputStream(client_json.getBytes(StandardCharsets.UTF_8))
+      val in :InputStream = new ByteArrayInputStream(credential_json.getBytes(StandardCharsets.UTF_8))
       val credential = GoogleCredential.fromStream(in, HTTP_TRANSPORT,JSON_FACTORY).createScoped(scopes)
 
       credential.refreshToken()
@@ -238,11 +238,11 @@ object SparkSpreadsheetService {
   /**
    * create new context of spareadsheets for spark
     *
-    * @param serviceAccountId
-   * @param client_json
+    *
+   * @param credential_json
    * @return
    */
-  def apply(serviceAccountId: String, client_json: String) = SparkSpreadsheetContext(serviceAccountId, client_json)
+  def apply(credential_json: String) = SparkSpreadsheetContext(credential_json)
 
   /**
    * find a spreadsheet by name

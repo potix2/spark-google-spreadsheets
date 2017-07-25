@@ -2,7 +2,6 @@
 
 Google Spreadsheets datasource for [SparkSQL and DataFrames](http://spark.apache.org/docs/latest/sql-programming-guide.html)
 
-[![Build Status](https://travis-ci.org/potix2/spark-google-spreadsheets.svg?branch=master)](https://travis-ci.org/potix2/spark-google-spreadsheets)
 
 ## Notice
 
@@ -35,23 +34,12 @@ Using Maven:
 
 ```xml
 <dependency>
-  <groupId>com.github.potix2</groupId>
+  <groupId>io.lingk</groupId>
   <artifactId>spark-google-spreadsheets_2.11</artifactId>
-  <version>0.5.0</version>
+  <version>1.0.0</version>
 </dependency>
 ```
 
-## SQL API
-
-```sql
-CREATE TABLE cars
-USING com.github.potix2.spark.google.spreadsheets
-OPTIONS (
-    path "<spreadsheetId>/worksheet1",
-    serviceAccountId "xxxxxx@developer.gserviceaccount.com",
-    credentialPath "/path/to/credentail.p12"
-)
-```
 
 ## Scala API
 
@@ -63,15 +51,13 @@ val sqlContext = new SQLContext(sc)
 // Creates a DataFrame from a specified worksheet
 val df = sqlContext.read.
     format("com.github.potix2.spark.google.spreadsheets").
-    option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
-    option("credentialPath", "/path/to/credentail.p12").
-    load("<spreadsheetId>/worksheet1")
-
+    option("client_json", "credential_in_json_format").
+    load("<spreadsheetId>/Sheet1")
+git 
 // Saves a DataFrame to a new worksheet
 df.write.
     format("com.github.potix2.spark.google.spreadsheets").
-    option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
-    option("credentialPath", "/path/to/credentail.p12").
+    option("client_json", "credential_in_json_format").
     save("<spreadsheetId>/newWorksheet")
 
 ```
