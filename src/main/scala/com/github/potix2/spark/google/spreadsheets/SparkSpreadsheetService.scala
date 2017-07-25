@@ -13,11 +13,12 @@
  */
 package com.github.potix2.spark.google.spreadsheets
 
-import java.io.File
 import java.net.URL
+import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.nio.charset.StandardCharsets
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential.Builder
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
@@ -36,28 +37,28 @@ object SparkSpreadsheetService {
   private val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
   private val JSON_FACTORY: JacksonFactory = JacksonFactory.getDefaultInstance()
 
-  case class SparkSpreadsheetContext(serviceAccountId: String, p12File: File) {
-    private val credential = authorize(serviceAccountId, p12File)
+  case class SparkSpreadsheetContext(serviceAccountId: String, client_json: String) {
+
+    private val credential = authorize(serviceAccountId, client_json)
     lazy val service =
       new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
         .setApplicationName(APP_NAME)
         .build()
 
-    private def authorize(serviceAccountId: String, p12File: File): GoogleCredential = {
-      val credential = new Builder()
-        .setTransport(HTTP_TRANSPORT)
-        .setJsonFactory(JSON_FACTORY)
-        .setServiceAccountId(serviceAccountId)
-        .setServiceAccountPrivateKeyFromP12File(p12File)
-        .setServiceAccountScopes(scopes)
-        .build()
+
+    private def authorize(serviceAccountId: String, client_json: String): GoogleCredential = {
+
+      // Reading credential json string
+      val in :InputStream = new ByteArrayInputStream(client_json.getBytes(StandardCharsets.UTF_8))
+      val credential = GoogleCredential.fromStream(in, HTTP_TRANSPORT,JSON_FACTORY).createScoped(scopes)
 
       credential.refreshToken()
       credential
     }
 
-    def findSpreadsheet(spreadSheetId: String): SparkSpreadsheet =
+    def findSpreadsheet(spreadSheetId: String): SparkSpreadsheet = {
       SparkSpreadsheet(this, service.spreadsheets().get(spreadSheetId).execute())
+    }
 
     def query(spreadsheetId: String, range: String): ValueRange =
       service.spreadsheets().values().get(spreadsheetId, range).execute()
@@ -238,10 +239,10 @@ object SparkSpreadsheetService {
    * create new context of spareadsheets for spark
     *
     * @param serviceAccountId
-   * @param p12File
+   * @param client_json
    * @return
    */
-  def apply(serviceAccountId: String, p12File: File) = SparkSpreadsheetContext(serviceAccountId, p12File)
+  def apply(serviceAccountId: String, client_json: String) = SparkSpreadsheetContext(serviceAccountId, client_json)
 
   /**
    * find a spreadsheet by name

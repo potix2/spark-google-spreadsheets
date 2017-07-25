@@ -13,14 +13,12 @@
  */
 package com.github.potix2.spark.google.spreadsheets
 
-import java.io.File
 
 import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider, SchemaRelationProvider}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 
 class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
-  final val DEFAULT_CREDENTIAL_PATH = "/etc/gdata/credential.p12"
 
   override def createRelation(sqlContext: SQLContext, parameters: Map[String, String]) = {
     createRelation(sqlContext, parameters, null)
@@ -46,17 +44,24 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     val (spreadsheetName, worksheetName) = pathToSheetNames(parameters)
     implicit val context = createSpreadsheetContext(parameters)
     val spreadsheet = SparkSpreadsheetService.findSpreadsheet(spreadsheetName)
-    if(!spreadsheet.isDefined)
+    if(!spreadsheet.isDefined) {
+
+
       throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
+
+    }
 
     spreadsheet.get.addWorksheet(worksheetName, data.schema, data.collect().toList, Util.toRowData)
     createRelation(sqlContext, context, spreadsheetName, worksheetName, data.schema)
   }
 
+
   private[spreadsheets] def createSpreadsheetContext(parameters: Map[String, String]) = {
+
     val serviceAccountId = parameters.getOrElse("serviceAccountId", sys.error("'serviceAccountId' must be specified for the google API account."))
-    val credentialPath = parameters.getOrElse("credentialPath", DEFAULT_CREDENTIAL_PATH)
-    SparkSpreadsheetService(serviceAccountId, new File(credentialPath))
+    val client_json:String = parameters.getOrElse("client_json", sys.error("'credentialString' must be specified for the google API account."))
+
+    SparkSpreadsheetService(serviceAccountId, client_json)
   }
 
   private[spreadsheets] def createRelation(sqlContext: SQLContext,
