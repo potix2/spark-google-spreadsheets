@@ -2,7 +2,7 @@ name := "spark-google-spreadsheets"
 
 organization := "io.lingk"
 
-version := "1.0.1"
+version := "1.0.2"
 
 scalaVersion := "2.11.7"
 
@@ -17,7 +17,7 @@ spIncludeMaven := true
 
 spIgnoreProvided := true
 
-sparkVersion := "2.1.1"
+sparkVersion := "2.2.0"
 
 val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 
