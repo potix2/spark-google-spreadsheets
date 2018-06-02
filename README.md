@@ -28,7 +28,7 @@ This library has different versions of Spark 1.6+, and 2.0+:
 Using SBT:
 
 ```
-libraryDependenicies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.5.0"
+libraryDependencies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.5.0"
 ```
 
 Using Maven:
