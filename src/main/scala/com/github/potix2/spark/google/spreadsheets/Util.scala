@@ -24,6 +24,7 @@ object Util {
                 case DataTypes.DateType => new ExtendedValue().setStringValue(row.getDate(i).toString)
                 case DataTypes.ShortType => new ExtendedValue().setNumberValue(row.getShort(i).toDouble)
                 case DataTypes.TimestampType => new ExtendedValue().setStringValue(row.getTimestamp(i).toString)
+                case DataTypes.DoubleType => new ExtendedValue().setNumberValue(row.getDouble(i))
               }
             )
         }.toList.asJava
