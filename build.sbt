@@ -4,9 +4,9 @@ organization := "com.github.potix2"
 
 scalaVersion := "2.11.12"
 
-crossScalaVersions := Seq("2.10.7", "2.11.12")
+crossScalaVersions := Seq("2.11.12")
 
-version := "0.5.0-SNAPSHOT"
+version := "0.6.1-SNAPSHOT"
 
 spName := "potix2/spark-google-spreadsheets"
 

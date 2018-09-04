@@ -20,6 +20,7 @@ This library has different versions of Spark 1.6+, and 2.0+:
 
 | This library | Spark Version |
 | ------------ | ------------- |
+| 0.6.x        | 2.3.x         |
 | 0.5.x        | 2.0.x         |
 | 0.4.x        | 1.6.x         |
 
@@ -28,7 +29,7 @@ This library has different versions of Spark 1.6+, and 2.0+:
 Using SBT:
 
 ```
-libraryDependencies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.5.0"
+libraryDependencies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.6.0"
 ```
 
 Using Maven:
@@ -78,7 +79,7 @@ df.write.
 
 ## License
 
-Copyright 2016, Katsunori Kanda
+Copyright 2016-2018, Katsunori Kanda
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
