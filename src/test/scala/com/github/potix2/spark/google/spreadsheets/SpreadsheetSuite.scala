@@ -103,12 +103,33 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
     assert(results.head.getString(2) === "3")
   }
 
-  trait PersonDataFrame {
+  trait PersonData {
     val personsSchema = StructType(List(
       StructField("id", IntegerType, true),
       StructField("firstname", StringType, true),
       StructField("lastname", StringType, true)))
+  }
+
+  trait PersonDataFrame extends PersonData {
     val personsRows = Seq(Row(1, "Kathleen", "Cole"), Row(2, "Julia", "Richards"), Row(3, "Terry", "Black"))
+    val personsRDD = sqlContext.sparkContext.parallelize(personsRows)
+    val personsDF = sqlContext.createDataFrame(personsRDD, personsSchema)
+  }
+
+  trait SparsePersonDataFrame extends PersonData {
+    val RowCount = 10
+
+    def firstNameValue(id: Int): String = {
+      if (id % 3 != 0) s"first-${id}" else null
+    }
+
+    def lastNameValue(id: Int): String = {
+      if (id % 4 != 0) s"last-${id}" else null
+    }
+
+    val personsRows = (1 to RowCount) map { id: Int =>
+      Row(id, firstNameValue(id), lastNameValue(id))
+    }
     val personsRDD = sqlContext.sparkContext.parallelize(personsRows)
     val personsDF = sqlContext.createDataFrame(personsRDD, personsSchema)
   }
@@ -131,6 +152,33 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
       assert(result(0).getString(0) == "1")
       assert(result(0).getString(1) == "Kathleen")
       assert(result(0).getString(2) == "Cole")
+    }
+  }
+
+  "A sparse DataFrame" should "be saved as a sheet, preserving empty cells" in new SparsePersonDataFrame {
+    import com.github.potix2.spark.google.spreadsheets._
+    withEmptyWorksheet { workSheetName =>
+      personsDF.write
+        .option("serviceAccountId", serviceAccountId)
+        .option("credentialPath", testCredentialPath)
+        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+
+      val result = sqlContext.read
+        .schema(personsSchema)
+        .option("serviceAccountId", serviceAccountId)
+        .option("credentialPath", testCredentialPath)
+        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+        .collect()
+
+      assert(result.size == RowCount)
+
+      (1 to RowCount) foreach { id: Int =>
+        val row = id - 1
+        val first = firstNameValue(id)
+        val last = lastNameValue(id)
+        // TODO: further investigate/fix null handling
+        // assert(result(row) == Row(id, if (first == null) "" else first, if (last == null) "" else last))
+      }
     }
   }
 
