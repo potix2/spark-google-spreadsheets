@@ -51,7 +51,11 @@ case class SpreadsheetRelation protected[spark] (
         val rowArray = new Array[Any](aSchema.fields.length)
         while(index < aSchema.fields.length) {
           val field = aSchema.fields(index)
-          rowArray(index) = TypeCast.castTo(m(field.name), field.dataType, field.nullable)
+          rowArray(index) = if (m.contains(field.name)) {
+            TypeCast.castTo(m(field.name), field.dataType, field.nullable)
+          } else {
+            null
+          }
           index += 1
         }
         Row.fromSeq(rowArray)
