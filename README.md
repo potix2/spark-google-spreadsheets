@@ -20,7 +20,7 @@ This library has different versions of Spark 1.6+, and 2.0+:
 
 | This library | Spark Version |
 | ------------ | ------------- |
-| 0.6.x        | 2.3.x         |
+| 0.6.x        | 2.3.x, 2.4.x  |
 | 0.5.x        | 2.0.x         |
 | 0.4.x        | 1.6.x         |
 
@@ -29,7 +29,7 @@ This library has different versions of Spark 1.6+, and 2.0+:
 Using SBT:
 
 ```
-libraryDependencies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.6.0"
+libraryDependencies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.6.1"
 ```
 
 Using Maven:
@@ -38,7 +38,7 @@ Using Maven:
 <dependency>
   <groupId>com.github.potix2</groupId>
   <artifactId>spark-google-spreadsheets_2.11</artifactId>
-  <version>0.5.0</version>
+  <version>0.6.1</version>
 </dependency>
 ```
 
