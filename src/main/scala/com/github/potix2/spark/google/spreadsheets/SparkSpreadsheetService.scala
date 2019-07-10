@@ -36,21 +36,24 @@ object SparkSpreadsheetService {
   private val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
   private val JSON_FACTORY: JacksonFactory = JacksonFactory.getDefaultInstance()
 
-  case class SparkSpreadsheetContext(serviceAccountId: String, p12File: File) {
-    private val credential = authorize(serviceAccountId, p12File)
+  case class SparkSpreadsheetContext(serviceAccountIdOption: Option[String], p12File: File) {
+    private val credential = authorize(serviceAccountIdOption, p12File)
     lazy val service =
       new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
         .setApplicationName(APP_NAME)
         .build()
 
-    private def authorize(serviceAccountId: String, p12File: File): GoogleCredential = {
-      val credential = new Builder()
-        .setTransport(HTTP_TRANSPORT)
-        .setJsonFactory(JSON_FACTORY)
-        .setServiceAccountId(serviceAccountId)
-        .setServiceAccountPrivateKeyFromP12File(p12File)
-        .setServiceAccountScopes(scopes)
-        .build()
+    private def authorize(serviceAccountIdOption: Option[String], p12File: File): GoogleCredential = {
+      val credential = serviceAccountIdOption
+          .map {
+            new Builder()
+              .setTransport(HTTP_TRANSPORT)
+              .setJsonFactory(JSON_FACTORY)
+              .setServiceAccountId(_)
+              .setServiceAccountPrivateKeyFromP12File(p12File)
+              .setServiceAccountScopes(scopes)
+              .build()
+          }.getOrElse(GoogleCredential.getApplicationDefault.createScoped(scopes))
 
       credential.refreshToken()
       credential
@@ -241,7 +244,7 @@ object SparkSpreadsheetService {
    * @param p12File
    * @return
    */
-  def apply(serviceAccountId: String, p12File: File) = SparkSpreadsheetContext(serviceAccountId, p12File)
+  def apply(serviceAccountIdOption: Option[String], p12File: File) = SparkSpreadsheetContext(serviceAccountIdOption, p12File)
 
   /**
    * find a spreadsheet by name

@@ -45,7 +45,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
   }
 
   def withNewEmptyWorksheet(testCode:(String) => Any): Unit = {
-    implicit val spreadSheetContext = SparkSpreadsheetService(serviceAccountId, new File(testCredentialPath))
+    implicit val spreadSheetContext = SparkSpreadsheetService(Some(serviceAccountId), new File(testCredentialPath))
     val spreadsheet = SparkSpreadsheetService.findSpreadsheet(TEST_SPREADSHEET_ID)
     spreadsheet.foreach { s =>
       val workSheetName = Random.alphanumeric.take(16).mkString
@@ -60,7 +60,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
   }
 
   def withEmptyWorksheet(testCode:(String) => Any): Unit = {
-    implicit val spreadSheetContext = SparkSpreadsheetService(serviceAccountId, new File(testCredentialPath))
+    implicit val spreadSheetContext = SparkSpreadsheetService(Some(serviceAccountId), new File(testCredentialPath))
     val workSheetName = Random.alphanumeric.take(16).mkString
     try {
       testCode(workSheetName)
