@@ -41,8 +41,8 @@ case class SpreadsheetRelation protected[spark] (
 
   private[spreadsheets] def findWorksheet(spreadsheetName: String, worksheetName: String)(implicit ctx: SparkSpreadsheetContext): Either[Throwable, SparkWorksheet] =
     for {
-      sheet <- findSpreadsheet(spreadsheetName).toRight(new RuntimeException(s"no such a worksheet: $worksheetName")).right
-      worksheet <- sheet.findWorksheet(worksheetName).toRight(new RuntimeException(s"no such a spreadsheet: $spreadsheetName")).right
+      sheet <- findSpreadsheet(spreadsheetName).toRight(new RuntimeException(s"no such spreadsheet: $spreadsheetName")).right
+      worksheet <- sheet.findWorksheet(worksheetName).toRight(new RuntimeException(s"no such worksheet: $worksheetName")).right
     } yield worksheet
 
   override def buildScan(): RDD[Row] = {
