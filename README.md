@@ -77,6 +77,25 @@ df.write.
 
 ```
 
+### Using Google default application credentials
+
+Provide authentication credentials to your application code by setting the environment variable 
+`GOOGLE_APPLICATION_CREDENTIALS`. The variable should be set to the path of the service account json file.
+
+
+```scala
+import org.apache.spark.sql.SQLContext
+
+val sqlContext = new SQLContext(sc)
+
+// Creates a DataFrame from a specified worksheet
+val df = sqlContext.read.
+    format("com.github.potix2.spark.google.spreadsheets").
+    load("<spreadsheetId>/worksheet1")
+```
+
+More details: https://cloud.google.com/docs/authentication/production
+
 ## License
 
 Copyright 2016-2018, Katsunori Kanda

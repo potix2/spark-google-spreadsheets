@@ -27,7 +27,7 @@ class SparkSpreadsheetServiceWriteSuite extends FlatSpec with BeforeAndAfter {
   private val TEST_SPREADSHEET_ID = "163Ja2OWUephWjIa-jpwTlvGcg8EJwCFCfxrF7aI117s"
 
   private val context: SparkSpreadsheetService.SparkSpreadsheetContext =
-    SparkSpreadsheetService.SparkSpreadsheetContext(serviceAccountId, new java.io.File(testCredentialPath))
+    SparkSpreadsheetService.SparkSpreadsheetContext(Some(serviceAccountId), new java.io.File(testCredentialPath))
 
   var spreadsheet: SparkSpreadsheet = null
   var worksheetName: String = ""
