@@ -29,6 +29,7 @@ case class SpreadsheetRelation protected[spark] (
 
   import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService._
 
+  private val fieldMap = scala.collection.mutable.Map[String, String]()
   override def schema: StructType = userSchema.getOrElse(inferSchema())
 
   private lazy val aWorksheet: SparkWorksheet =
@@ -47,6 +48,7 @@ case class SpreadsheetRelation protected[spark] (
 
   override def buildScan(): RDD[Row] = {
     val aSchema = schema
+    val schemaMap = fieldMap.toMap
     sqlContext.sparkContext.makeRDD(rows).mapPartitions { iter =>
       iter.map { m =>
         var index = 0
@@ -55,6 +57,8 @@ case class SpreadsheetRelation protected[spark] (
           val field = aSchema.fields(index)
           rowArray(index) = if (m.contains(field.name)) {
             TypeCast.castTo(m(field.name), field.dataType, field.nullable)
+          } else if (schemaMap.contains(field.name) && m.contains(schemaMap(field.name))) {
+            TypeCast.castTo(m(schemaMap(field.name)), field.dataType, field.nullable)
           } else {
             null
           }
@@ -78,9 +82,19 @@ case class SpreadsheetRelation protected[spark] (
     }
   }
 
+  def sanitizeColumnName(name: String): String =
+  {
+    name
+      .replaceAll("[^a-zA-Z0-9]+", "_")    // Replace sequences of non-alphanumeric characters with underscores
+      .replaceAll("_+$", "")               // Strip trailing underscores
+      .replaceAll("^[0-9_]+", "")          // Strip leading underscores and digits
+  }
+
   private def inferSchema(): StructType =
-    StructType(aWorksheet.headers.toList.map { fieldName =>
-      StructField(fieldName, StringType, nullable = true)
-    })
+    StructType(aWorksheet.headers.toList.map { fieldName => {
+      val sanitizedName = sanitizeColumnName(fieldName)
+      fieldMap.put(sanitizedName, fieldName)
+      StructField(sanitizedName, StringType, true)
+    }})
 
 }
