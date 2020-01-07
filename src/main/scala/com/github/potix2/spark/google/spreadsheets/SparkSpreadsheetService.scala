@@ -59,6 +59,13 @@ object SparkSpreadsheetService {
       credential
     }
 
+    private def authorizeWithJson(serviceAccountIdOption: Option[String], jsonKey: String): GoogleCredential = {
+      val jsonStream = new java.io.ByteArrayInputStream(jsonKey.getBytes(java.nio.charset.StandardCharsets.UTF_8.name))
+      val cred = GoogleCredential.fromStream(jsonStream).createScoped(scopes)
+      cred.refreshToken()
+      cred
+    }
+
     def findSpreadsheet(spreadSheetId: String): SparkSpreadsheet =
       SparkSpreadsheet(this, service.spreadsheets().get(spreadSheetId).execute())
 
