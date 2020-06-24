@@ -46,10 +46,27 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     val (spreadsheetName, worksheetName) = pathToSheetNames(parameters)
     implicit val context = createSpreadsheetContext(parameters)
     val spreadsheet = SparkSpreadsheetService.findSpreadsheet(spreadsheetName)
-    if(!spreadsheet.isDefined)
+    if (!spreadsheet.isDefined)
       throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
 
-    spreadsheet.get.addWorksheet(worksheetName, data.schema, data.collect().toList, Util.toRowData)
+    def write(): Unit = spreadsheet.get.addWorksheet(worksheetName, data.schema, data.collect().toList, Util.toRowData)
+
+    spreadsheet.get.findWorksheet(worksheetName) match {
+      case Some(worksheet) =>
+        mode match {
+          case SaveMode.Overwrite => {
+            spreadsheet.get.deleteWorksheet(worksheetName)
+            write()
+          }
+          case SaveMode.Append => {
+            val worksheetRelation = SpreadsheetRelation(context, spreadsheetName, worksheetName, Some(data.schema))(sqlContext)
+            worksheet.updateCells(data.schema, worksheetRelation.buildScan().collect().toList ++ data.collect().toList, Util.toRowData)
+          }
+          case SaveMode.Ignore => Unit
+          case SaveMode.ErrorIfExists => throw new IllegalAccessException(s"Worksheet with name: $worksheetName already exists.")
+        }
+      case None => write()
+    }
     createRelation(sqlContext, context, spreadsheetName, worksheetName, data.schema)
   }
 

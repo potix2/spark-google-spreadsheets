@@ -19,6 +19,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 case class SpreadsheetRelation protected[spark] (
                                                   context:SparkSpreadsheetContext,
@@ -60,7 +61,7 @@ case class SpreadsheetRelation protected[spark] (
           }
           index += 1
         }
-        Row.fromSeq(rowArray)
+        new GenericRowWithSchema(rowArray, aSchema)
       }
     }
   }
