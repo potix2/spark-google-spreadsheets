@@ -18,7 +18,7 @@ import java.io.File
 import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.sql.{Row, SQLContext, SaveMode}
 import org.scalatest.{BeforeAndAfter, FlatSpec}
 
 import scala.util.Random
@@ -45,7 +45,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
   }
 
   def withNewEmptyWorksheet(testCode:(String) => Any): Unit = {
-    implicit val spreadSheetContext = SparkSpreadsheetService(serviceAccountId, new File(testCredentialPath))
+    implicit val spreadSheetContext = SparkSpreadsheetService(Some(serviceAccountId), new File(testCredentialPath))
     val spreadsheet = SparkSpreadsheetService.findSpreadsheet(TEST_SPREADSHEET_ID)
     spreadsheet.foreach { s =>
       val workSheetName = Random.alphanumeric.take(16).mkString
@@ -60,7 +60,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
   }
 
   def withEmptyWorksheet(testCode:(String) => Any): Unit = {
-    implicit val spreadSheetContext = SparkSpreadsheetService(serviceAccountId, new File(testCredentialPath))
+    implicit val spreadSheetContext = SparkSpreadsheetService(Some(serviceAccountId), new File(testCredentialPath))
     val workSheetName = Random.alphanumeric.take(16).mkString
     try {
       testCode(workSheetName)
@@ -109,8 +109,11 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
       StructField("firstname", StringType, true),
       StructField("lastname", StringType, true)))
     val personsRows = Seq(Row(1, "Kathleen", "Cole"), Row(2, "Julia", "Richards"), Row(3, "Terry", "Black"))
+    val nextPersonsRows = Seq(Row(1, "John", "Snow"), Row(2, "Knows", "Nothing"))
     val personsRDD = sqlContext.sparkContext.parallelize(personsRows)
+    val nextPersonsRDD = sqlContext.sparkContext.parallelize(nextPersonsRows)
     val personsDF = sqlContext.createDataFrame(personsRDD, personsSchema)
+    val nextPersonsDF = sqlContext.createDataFrame(nextPersonsRDD, personsSchema)
   }
 
   "A DataFrame" should "be saved as a sheet" in new PersonDataFrame {
@@ -157,6 +160,63 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
        """.stripMargin.replaceAll("\n", " "))
 
     assert(sqlContext.sql("SELECT id, firstname, lastname FROM SpreadsheetSuite").collect().size == 10)
+  }
+
+  it should "be overwritten as a sheet" in new PersonDataFrame {
+    withEmptyWorksheet { workSheetName =>
+      personsDF
+        .write
+        .option("serviceAccountId", serviceAccountId)
+        .option("credentialPath", testCredentialPath)
+        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+
+      nextPersonsDF
+        .write
+        .option("serviceAccountId", serviceAccountId)
+        .option("credentialPath", testCredentialPath)
+        .mode(SaveMode.Overwrite)
+        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+
+      val result = sqlContext.read
+        .option("serviceAccountId", serviceAccountId)
+        .option("credentialPath", testCredentialPath)
+        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+        .collect()
+
+      assert(result.size == 2)
+      assert(result(0).getString(0) == "1")
+      assert(result(0).getString(1) == "John")
+      assert(result(0).getString(2) == "Snow")
+    }
+  }
+
+  it should "be appended as a sheet" in new PersonDataFrame {
+    withEmptyWorksheet { workSheetName =>
+      personsDF
+        .write
+        .option("serviceAccountId", serviceAccountId)
+        .option("credentialPath", testCredentialPath)
+        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+
+      nextPersonsDF
+        .write
+        .option("serviceAccountId", serviceAccountId)
+        .option("credentialPath", testCredentialPath)
+        .mode(SaveMode.Append)
+        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+
+      val result = sqlContext.read
+        .option("serviceAccountId", serviceAccountId)
+        .option("credentialPath", testCredentialPath)
+        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+        .collect()
+
+
+      assert(result.size == 5)
+      assert(result(4).getString(0) == "2")
+      assert(result(4).getString(1) == "Knows")
+      assert(result(4).getString(2) == "Nothing")
+    }
   }
 
   it should "be inserted from sql" in {

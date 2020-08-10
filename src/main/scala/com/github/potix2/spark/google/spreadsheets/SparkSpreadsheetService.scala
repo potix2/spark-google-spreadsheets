@@ -14,10 +14,10 @@
 package com.github.potix2.spark.google.spreadsheets
 
 import java.net.URL
-import java.io.ByteArrayInputStream
-import java.io.InputStream
+import java.io.{ByteArrayInputStream, File, InputStream}
 import java.nio.charset.StandardCharsets
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential.Builder
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -36,6 +36,36 @@ object SparkSpreadsheetService {
   private val APP_NAME = "spark-google-spreadsheets-1.0.0"
   private val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
   private val JSON_FACTORY: JacksonFactory = JacksonFactory.getDefaultInstance()
+
+    /*case class SparkSpreadsheetContext(serviceAccountIdOption: Option[String], p12File: File) {
+      private val credential = authorize(serviceAccountIdOption, p12File)
+      lazy val service =
+        new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
+          .setApplicationName(APP_NAME)
+          .build()
+
+      private def authorize(serviceAccountIdOption: Option[String], p12File: File): GoogleCredential = {
+        val credential = serviceAccountIdOption
+          .map {
+            new Builder()
+              .setTransport(HTTP_TRANSPORT)
+              .setJsonFactory(JSON_FACTORY)
+              .setServiceAccountId(_)
+              .setServiceAccountPrivateKeyFromP12File(p12File)
+              .setServiceAccountScopes(scopes)
+              .build()
+          }.getOrElse(GoogleCredential.getApplicationDefault.createScoped(scopes))
+
+        credential.refreshToken()
+        credential
+      }
+
+      def findSpreadsheet(spreadSheetId: String): SparkSpreadsheet =
+        SparkSpreadsheet(this, service.spreadsheets().get(spreadSheetId).execute())
+
+      def query(spreadsheetId: String, range: String): ValueRange =
+        service.spreadsheets().values().get(spreadsheetId, range).execute()
+    }*/
 
   case class SparkSpreadsheetContext(client_json: String) {
 

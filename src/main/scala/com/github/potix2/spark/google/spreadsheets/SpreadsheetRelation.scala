@@ -16,6 +16,7 @@ package com.github.potix2.spark.google.spreadsheets
 import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
 import com.github.potix2.spark.google.spreadsheets.util._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
@@ -54,7 +55,7 @@ case class SpreadsheetRelation protected[spark] (
           rowArray(index) = TypeCast.castTo(m(field.name), field.dataType, field.nullable)
           index += 1
         }
-        Row.fromSeq(rowArray)
+        new GenericRowWithSchema(rowArray, aSchema)
       }
     }
   }
