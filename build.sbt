@@ -6,8 +6,7 @@ version := "1.0.2"
 
 scalaVersion := "2.11.7"
 
-crossScalaVersions := Seq("2.10.6", "2.11.8")
-
+crossScalaVersions := Seq("2.11.12")
 
 spName := "potix2/spark-google-spreadsheets"
 
@@ -17,7 +16,7 @@ spIncludeMaven := true
 
 spIgnoreProvided := true
 
-sparkVersion := "2.2.0"
+sparkVersion := "2.3.2"
 
 val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 
@@ -80,11 +79,6 @@ pomExtra := (
 
 // Skip tests during assembly
 test in assembly := {}
-
-ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := {
-  if (scalaBinaryVersion.value == "2.10") false
-  else true
-}
 
 import ReleaseTransformations._
 

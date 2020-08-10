@@ -18,20 +18,21 @@ From the "Packages" page of the feed:
 
 ## Notice
 
-The version 0.4.0 breaks compatibility with previous version. You must
-use a ** spreadsheetId ** to identify which spreadsheets is to be accessed or altered.
-On older versions a spreadsheet name is used.
+The version 0.4.0 breaks compatibility with previous versions. You must
+use a ** spreadsheetId ** to identify which spreadsheet is to be accessed or altered.
+In older versions, spreadsheet name was used.
 
 If you don't know spreadsheetId, please read the [Introduction to the Google Sheets API v4](https://developers.google.com/sheets/guides/concepts).
 
 ## Requirements
 
-This library has different versions of Spark 1.6+, and 2.0+:
+This library supports different versions of Spark:
 
 ### Latest compatible versions
 
 | This library | Spark Version |
 | ------------ | ------------- |
+| 0.6.x        | 2.3.x, 2.4.x  |
 | 0.5.x        | 2.0.x         |
 | 0.4.x        | 1.6.x         |
 
@@ -40,7 +41,7 @@ This library has different versions of Spark 1.6+, and 2.0+:
 Using SBT:
 
 ```
-libraryDependenicies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.5.0"
+libraryDependencies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.6.3"
 ```
 
 Using Maven:
@@ -52,7 +53,6 @@ Using Maven:
   <version>1.0.0</version>
 </dependency>
 ```
-
 
 ## Scala API
 
@@ -75,9 +75,28 @@ df.write.
 
 ```
 
+### Using Google default application credentials
+
+Provide authentication credentials to your application code by setting the environment variable 
+`GOOGLE_APPLICATION_CREDENTIALS`. The variable should be set to the path of the service account json file.
+
+
+```scala
+import org.apache.spark.sql.SQLContext
+
+val sqlContext = new SQLContext(sc)
+
+// Creates a DataFrame from a specified worksheet
+val df = sqlContext.read.
+    format("com.github.potix2.spark.google.spreadsheets").
+    load("<spreadsheetId>/worksheet1")
+```
+
+More details: https://cloud.google.com/docs/authentication/production
+
 ## License
 
-Copyright 2016, Katsunori Kanda
+Copyright 2016-2018, Katsunori Kanda
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
