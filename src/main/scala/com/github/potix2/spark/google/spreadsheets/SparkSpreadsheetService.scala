@@ -75,7 +75,6 @@ object SparkSpreadsheetService {
         .setApplicationName(APP_NAME)
         .build()
 
-
     private def authorize(credential_json: String): GoogleCredential = {
 
       // Reading credential json string
