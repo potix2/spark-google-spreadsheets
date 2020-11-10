@@ -22,32 +22,50 @@ import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
   final val DEFAULT_CREDENTIAL_PATH = "/etc/gdata/credential.p12"
 
-  override def createRelation(sqlContext: SQLContext, parameters: Map[String, String]) = {
+  override def createRelation(
+                               sqlContext: SQLContext,
+                               parameters: Map[String, String]
+                             ): SpreadsheetRelation = {
     createRelation(sqlContext, parameters, null)
   }
 
   private[spreadsheets] def pathToSheetNames(parameters: Map[String, String]): (String, String) = {
     val path = parameters.getOrElse("path", sys.error("'path' must be specified for spreadsheets."))
     val elems = path.split('/')
-    if (elems.length < 2)
+    if (elems.length < 2) {
       throw new Exception("'path' must be formed like '<spreadsheet>/<worksheet>'")
+    }
 
     (elems(0), elems(1))
   }
 
-  override def createRelation(sqlContext: SQLContext, parameters: Map[String, String], schema: StructType) = {
+  override def createRelation(
+                               sqlContext: SQLContext,
+                               parameters: Map[String, String],
+                               schema: StructType
+                             ): SpreadsheetRelation = {
+
     val (spreadsheetName, worksheetName) = pathToSheetNames(parameters)
     val context = createSpreadsheetContext(parameters)
     createRelation(sqlContext, context, spreadsheetName, worksheetName, schema)
   }
 
 
-  override def createRelation(sqlContext: SQLContext, mode: SaveMode, parameters: Map[String, String], data: DataFrame): BaseRelation = {
+  override def createRelation(
+                               sqlContext: SQLContext,
+                               mode: SaveMode,
+                               parameters: Map[String, String],
+                               data: DataFrame
+                             ): BaseRelation = {
     val (spreadsheetName, worksheetName) = pathToSheetNames(parameters)
-    implicit val context = createSpreadsheetContext(parameters)
+    implicit val context: SparkSpreadsheetService.SparkSpreadsheetContext =
+      createSpreadsheetContext(parameters)
+
     val spreadsheet = SparkSpreadsheetService.findSpreadsheet(spreadsheetName)
-    if(!spreadsheet.isDefined)
+
+    if (spreadsheet.isEmpty) {
       throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
+    }
 
     spreadsheet.get.addWorksheet(worksheetName, data.schema, data.collect().toList, Util.toRowData)
     createRelation(sqlContext, context, spreadsheetName, worksheetName, data.schema)

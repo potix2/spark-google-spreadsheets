@@ -38,22 +38,22 @@ object SparkSpreadsheetService {
 
   case class SparkSpreadsheetContext(serviceAccountIdOption: Option[String], p12File: File) {
     private val credential = authorize(serviceAccountIdOption, p12File)
-    lazy val service =
+    lazy val service: Sheets =
       new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
         .setApplicationName(APP_NAME)
         .build()
 
     private def authorize(serviceAccountIdOption: Option[String], p12File: File): GoogleCredential = {
       val credential = serviceAccountIdOption
-          .map {
-            new Builder()
-              .setTransport(HTTP_TRANSPORT)
-              .setJsonFactory(JSON_FACTORY)
-              .setServiceAccountId(_)
-              .setServiceAccountPrivateKeyFromP12File(p12File)
-              .setServiceAccountScopes(scopes)
-              .build()
-          }.getOrElse(GoogleCredential.getApplicationDefault.createScoped(scopes))
+        .map {
+          new Builder()
+            .setTransport(HTTP_TRANSPORT)
+            .setJsonFactory(JSON_FACTORY)
+            .setServiceAccountId(_)
+            .setServiceAccountPrivateKeyFromP12File(p12File)
+            .setServiceAccountScopes(scopes)
+            .build()
+        }.getOrElse(GoogleCredential.getApplicationDefault.createScoped(scopes))
 
       credential.refreshToken()
       credential
@@ -66,8 +66,9 @@ object SparkSpreadsheetService {
       service.spreadsheets().values().get(spreadsheetId, range).execute()
   }
 
-  case class SparkSpreadsheet(context:SparkSpreadsheetContext, private var spreadsheet: Spreadsheet) {
+  case class SparkSpreadsheet(context: SparkSpreadsheetContext, private var spreadsheet: Spreadsheet) {
     def name: String = spreadsheet.getProperties.getTitle
+
     def getWorksheets: Seq[SparkWorksheet] =
       spreadsheet.getSheets.map(new SparkWorksheet(context, spreadsheet, _))
 
@@ -153,7 +154,7 @@ object SparkSpreadsheetService {
 
     def deleteWorksheet(worksheetName: String): Unit = {
       val worksheet: Option[SparkWorksheet] = findWorksheet(worksheetName)
-      if(worksheet.isDefined) {
+      if (worksheet.isDefined) {
         val request = new Request()
         val sheetId = worksheet.get.sheet.getProperties.getSheetId
         request.setDeleteSheet(new DeleteSheetRequest()
@@ -169,9 +170,10 @@ object SparkSpreadsheetService {
 
   case class SparkWorksheet(context: SparkSpreadsheetContext, spreadsheet: Spreadsheet, sheet: Sheet) {
     def name: String = sheet.getProperties.getTitle
+
     lazy val values = {
       val valueRange = context.query(spreadsheet.getSpreadsheetId, name)
-      if ( valueRange.getValues != null )
+      if (valueRange.getValues != null)
         valueRange.getValues
       else
         List[java.util.List[Object]]().asJava
@@ -229,7 +231,7 @@ object SparkSpreadsheetService {
     }
 
     def rows: Seq[Map[String, String]] =
-      if(values.isEmpty) {
+      if (values.isEmpty) {
         Seq()
       }
       else {
@@ -239,8 +241,8 @@ object SparkSpreadsheetService {
 
   /**
    * create new context of spareadsheets for spark
-    *
-    * @param serviceAccountId
+   *
+   * @param serviceAccountId
    * @param p12File
    * @return
    */
@@ -248,8 +250,8 @@ object SparkSpreadsheetService {
 
   /**
    * find a spreadsheet by name
-    *
-    * @param spreadsheetName
+   *
+   * @param spreadsheetName
    * @param context
    * @return
    */
