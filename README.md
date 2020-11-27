@@ -1,6 +1,6 @@
 # THIS IS FORK
 
-This library is written by **Katsunori Kanda** ([https://github.com/potix2]github.com/potix2) and all prises for it should go to him.
+This library is written by **Katsunori Kanda** ([github.com/potix2](https://github.com/potix2)) and all prises for it should go to him.
 
 This fork is ment to be usable in Scala 2.12 and Spark 3.0.1 which is now LTS version for Databricks platform.
 
