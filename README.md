@@ -1,8 +1,12 @@
+# THIS IS FORK
+
+This library is written by **Katsunori Kanda** ([https://github.com/potix2]github.com/potix2) and all prises for it should go to him.
+
+This fork is ment to be usable in Scala 2.12 and Spark 3.0.1 which is now LTS version for Databricks platform.
+
 # Spark Google Spreadsheets
 
 Google Spreadsheets datasource for [SparkSQL and DataFrames](http://spark.apache.org/docs/latest/sql-programming-guide.html)
-
-[![Build Status](https://travis-ci.org/potix2/spark-google-spreadsheets.svg?branch=master)](https://travis-ci.org/potix2/spark-google-spreadsheets)
 
 ## Notice
 
@@ -20,6 +24,7 @@ This library supports different versions of Spark:
 
 | This library | Spark Version |
 | ------------ | ------------- |
+| 0.7.x        | 3.0.1         |
 | 0.6.x        | 2.3.x, 2.4.x  |
 | 0.5.x        | 2.0.x         |
 | 0.4.x        | 1.6.x         |
@@ -29,16 +34,16 @@ This library supports different versions of Spark:
 Using SBT:
 
 ```
-libraryDependencies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.6.3"
+libraryDependencies += "com.github.perbeatus" %% "spark-google-spreadsheets" % "0.6.3"
 ```
 
 Using Maven:
 
 ```xml
 <dependency>
-  <groupId>com.github.potix2</groupId>
-  <artifactId>spark-google-spreadsheets_2.11</artifactId>
-  <version>0.6.3</version>
+  <groupId>com.github.perbeatus</groupId>
+  <artifactId>spark-google-spreadsheets_2.12-3.0.1</artifactId>
+  <version>0.7.0</version>
 </dependency>
 ```
 
@@ -46,7 +51,7 @@ Using Maven:
 
 ```sql
 CREATE TABLE cars
-USING com.github.potix2.spark.google.spreadsheets
+USING com.github.perbeatus.spark.google.spreadsheets
 OPTIONS (
     path "<spreadsheetId>/worksheet1",
     serviceAccountId "xxxxxx@developer.gserviceaccount.com",
@@ -63,14 +68,14 @@ val sqlContext = new SQLContext(sc)
 
 // Creates a DataFrame from a specified worksheet
 val df = sqlContext.read.
-    format("com.github.potix2.spark.google.spreadsheets").
+    format("com.github.perbeatus.spark.google.spreadsheets").
     option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
     option("credentialPath", "/path/to/credential.p12").
     load("<spreadsheetId>/worksheet1")
 
 // Saves a DataFrame to a new worksheet
 df.write.
-    format("com.github.potix2.spark.google.spreadsheets").
+    format("com.github.perbeatus.spark.google.spreadsheets").
     option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
     option("credentialPath", "/path/to/credential.p12").
     save("<spreadsheetId>/newWorksheet")
@@ -90,7 +95,7 @@ val sqlContext = new SQLContext(sc)
 
 // Creates a DataFrame from a specified worksheet
 val df = sqlContext.read.
-    format("com.github.potix2.spark.google.spreadsheets").
+    format("com.github.perbeatus.spark.google.spreadsheets").
     load("<spreadsheetId>/worksheet1")
 ```
 

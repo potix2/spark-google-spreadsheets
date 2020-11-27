@@ -11,10 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.potix2.spark.google.spreadsheets
+package com.github.perbeatus.spark.google.spreadsheets
 
-import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
-import com.github.potix2.spark.google.spreadsheets.util._
+import com.github.perbeatus.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
+import com.github.perbeatus.spark.google.spreadsheets.util._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
@@ -27,7 +27,7 @@ case class SpreadsheetRelation protected[spark] (
                                                   userSchema: Option[StructType] = None)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
-  import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService._
+  import com.github.perbeatus.spark.google.spreadsheets.SparkSpreadsheetService._
 
   private val fieldMap = scala.collection.mutable.Map[String, String]()
   override def schema: StructType = userSchema.getOrElse(inferSchema())

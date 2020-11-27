@@ -11,9 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.potix2.spark.google.spreadsheets
+package com.github.perbeatus.spark.google.spreadsheets
 
-import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheet
+import com.github.perbeatus.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheet
 import com.google.api.services.sheets.v4.model.{ExtendedValue, CellData, RowData}
 import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
 import org.scalatest.{BeforeAndAfter, FlatSpec}

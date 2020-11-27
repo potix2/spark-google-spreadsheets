@@ -11,11 +11,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.potix2.spark.google.spreadsheets
+package com.github.perbeatus.spark.google.spreadsheets
 
 import java.io.File
 
-import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
+import com.github.perbeatus.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SQLContext}
@@ -137,7 +137,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
   behavior of "A DataFrame"
 
   it should "be saved as a sheet" in new PersonDataFrame {
-    import com.github.potix2.spark.google.spreadsheets._
+    import com.github.perbeatus.spark.google.spreadsheets._
     withEmptyWorksheet { workSheetName =>
       personsDF.write
         .option("serviceAccountId", serviceAccountId)
@@ -169,7 +169,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
   }
 
   "A sparse DataFrame" should "be saved as a sheet, preserving empty cells" in new SparsePersonDataFrame {
-    import com.github.potix2.spark.google.spreadsheets._
+    import com.github.perbeatus.spark.google.spreadsheets._
     withEmptyWorksheet { workSheetName =>
       personsDF.write
         .option("serviceAccountId", serviceAccountId)
@@ -201,7 +201,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
         s"""
            |CREATE TEMPORARY TABLE people
            |(id int, firstname string, lastname string)
-           |USING com.github.potix2.spark.google.spreadsheets
+           |USING com.github.perbeatus.spark.google.spreadsheets
            |OPTIONS (path "$TEST_SPREADSHEET_ID/$worksheetName", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
        """.stripMargin.replaceAll("\n", " "))
 
@@ -213,7 +213,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
     sqlContext.sql(
       s"""
          |CREATE TEMPORARY TABLE SpreadsheetSuite
-         |USING com.github.potix2.spark.google.spreadsheets
+         |USING com.github.perbeatus.spark.google.spreadsheets
          |OPTIONS (path "$TEST_SPREADSHEET_ID/case2", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
        """.stripMargin.replaceAll("\n", " "))
 
@@ -226,14 +226,14 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
         s"""
            |CREATE TEMPORARY TABLE accesslog
            |(id string, firstname string, lastname string, email string, country string, ipaddress string)
-           |USING com.github.potix2.spark.google.spreadsheets
+           |USING com.github.perbeatus.spark.google.spreadsheets
            |OPTIONS (path "$TEST_SPREADSHEET_ID/$worksheetName", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
        """.stripMargin.replaceAll("\n", " "))
 
       sqlContext.sql(
         s"""
            |CREATE TEMPORARY TABLE SpreadsheetSuite
-           |USING com.github.potix2.spark.google.spreadsheets
+           |USING com.github.perbeatus.spark.google.spreadsheets
            |OPTIONS (path "$TEST_SPREADSHEET_ID/case2", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
        """.stripMargin.replaceAll("\n", " "))
 
@@ -251,7 +251,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
   }
 
   "The underscore" should "be used in a column name" in new UnderscoreDataFrame {
-    import com.github.potix2.spark.google.spreadsheets._
+    import com.github.perbeatus.spark.google.spreadsheets._
     withEmptyWorksheet { workSheetName =>
       aDF.write
         .option("serviceAccountId", serviceAccountId)

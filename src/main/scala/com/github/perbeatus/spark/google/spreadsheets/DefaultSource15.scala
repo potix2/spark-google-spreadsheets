@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.potix2.spark.google.spreadsheets
+package com.github.perbeatus.spark.google.spreadsheets
 
 import org.apache.spark.sql.sources.DataSourceRegister
 

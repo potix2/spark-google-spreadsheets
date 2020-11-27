@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.potix2.spark.google
+package com.github.perbeatus.spark.google
 
 import org.apache.spark.sql._
 
@@ -21,7 +21,7 @@ package object spreadsheets {
    */
   implicit class SpreadsheetDataFrameReader(reader: DataFrameReader) {
     def spreadsheet: String => DataFrame =
-      reader.format("com.github.potix2.spark.google.spreadsheets").load
+      reader.format("com.github.perbeatus.spark.google.spreadsheets").load
   }
 
   /**
@@ -29,6 +29,6 @@ package object spreadsheets {
    */
   implicit class SpreadsheetDataFrameWriter[T](writer: DataFrameWriter[T]) {
     def spreadsheet: String => Unit =
-      writer.format("com.github.potix2.spark.google.spreadsheets").save
+      writer.format("com.github.perbeatus.spark.google.spreadsheets").save
   }
 }

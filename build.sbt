@@ -1,9 +1,9 @@
 name := "spark-google-spreadsheets"
-organization := "com.github.potix2"
-scalaVersion := "2.12"
+organization := "com.github.perbeatus"
+scalaVersion := "2.12.10"
 crossScalaVersions := Seq("2.12.10")
-version := "0.6.4"
-spName := "potix2/spark-google-spreadsheets"
+version := "0.7.0"
+spName := "perbeatus/spark-google-spreadsheets"
 spAppendScalaVersion := true
 spIncludeMaven := true
 spIgnoreProvided := true
@@ -52,16 +52,16 @@ publishTo := {
 }
 
 pomExtra := (
-  <url>https://github.com/potix2/spark-google-spreadsheets</url>
+  <url>https://github.com/perbeatus/spark-google-spreadsheets</url>
   <scm>
-    <url>git@github.com:potix2/spark-google-spreadsheets.git</url>
-    <connection>scm:git:git@github.com:potix2/spark-google-spreadsheets.git</connection>
+    <url>git@github.com:perbeatus/spark-google-spreadsheets.git</url>
+    <connection>scm:git:git@github.com:perbeatus/spark-google-spreadsheets.git</connection>
   </scm>
   <developers>
     <developer>
-      <id>potix2</id>
-      <name>Katsunori Kanda</name>
-      <url>https://github.com/potix2/</url>
+      <id>perbeatus</id>
+      <name>PerBeatus</name>
+      <url>https://github.com/perbeatus/</url>
     </developer>
   </developers>)
 
@@ -92,4 +92,4 @@ assemblyMergeStrategy in assembly := {
 }
 
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
-assemblyJarName in assembly := s"${name}_${scalaVersion}-${sparkVersion}_${version}.jar"
+assemblyJarName in assembly := s"${name.value}_${scalaVersion.value}-${sparkVersion.value}_${version.value}.jar"

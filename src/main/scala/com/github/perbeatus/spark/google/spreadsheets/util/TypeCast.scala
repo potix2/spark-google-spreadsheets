@@ -1,4 +1,4 @@
-package com.github.potix2.spark.google.spreadsheets.util
+package com.github.perbeatus.spark.google.spreadsheets.util
 
 import java.math.BigDecimal
 import java.sql.{Date, Timestamp}
