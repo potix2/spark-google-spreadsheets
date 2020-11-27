@@ -1,27 +1,17 @@
 name := "spark-google-spreadsheets"
-
 organization := "com.github.potix2"
-
-scalaVersion := "2.12.10"
-
+scalaVersion := "2.12"
 crossScalaVersions := Seq("2.12.10")
-
 version := "0.6.4"
-
 spName := "potix2/spark-google-spreadsheets"
-
 spAppendScalaVersion := true
-
 spIncludeMaven := true
-
 spIgnoreProvided := true
-
-sparkVersion := "2.4.4"
+sparkVersion := "3.0.1"
 
 val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 
 testSparkVersion := sys.props.get("spark.testVersion").getOrElse(sparkVersion.value)
-
 sparkComponents := Seq("sql")
 
 libraryDependencies ++= Seq(
@@ -44,15 +34,10 @@ libraryDependencies ++= Seq(
  * release settings
  */
 publishMavenStyle := true
-
 releaseCrossBuild := true
-
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
-
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
-
 publishArtifact in Test := false
-
 pomIncludeRepository := { _ => false }
 
 //publishMavenStyle := true
@@ -99,3 +84,12 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges,
   releaseStepTask(spPublish)
 )
+
+// assembly options
+assemblyMergeStrategy in assembly := {   
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard   
+  case x => MergeStrategy.first 
+}
+
+assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
+assemblyJarName in assembly := s"${name}_${scalaVersion}-${sparkVersion}_${version}.jar"
