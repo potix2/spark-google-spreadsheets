@@ -5,6 +5,7 @@ organization := "com.vinted"
 scalaVersion := "2.12.12"
 
 enablePlugins(GitVersioning)
+git.useGitDescribe := true
 
 spName := "potix2/spark-google-spreadsheets"
 spAppendScalaVersion := true
