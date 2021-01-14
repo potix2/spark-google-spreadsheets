@@ -3,3 +3,6 @@ target/
 .idea/
 .idea_modules/
 .DS_Store
+.metals
+.bloop
+metals.sbt
