@@ -2,7 +2,7 @@
 
 Google Spreadsheets datasource for [SparkSQL and DataFrames](http://spark.apache.org/docs/latest/sql-programming-guide.html)
 
-[![Actions Build](https://github.com/kostjas/spark-google-spreadsheets/workflows/build/badge.svg)](https://github.com/kostjas/spark-google-spreadsheets/actions)
+[![Actions Build](https://github.com/kostjas/spark-google-spreadsheets/actions/workflows/scala.yml/badge.svg)](https://github.com/kostjas/spark-google-spreadsheets/actions)
 [![Coverage Status](https://coveralls.io/repos/github/kostjas/spark-google-spreadsheets/badge.svg?branch=master)](https://coveralls.io/github/kostjas/spark-google-spreadsheets?branch=master)
 
 ## Notice
