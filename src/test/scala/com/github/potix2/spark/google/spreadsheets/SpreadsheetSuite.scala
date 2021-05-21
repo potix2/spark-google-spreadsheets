@@ -15,7 +15,6 @@ package com.github.potix2.spark.google.spreadsheets
 
 import java.io.File
 import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
-import org.apache.spark.SparkContext
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SQLContext, SparkSession}
 import org.scalatest.BeforeAndAfter

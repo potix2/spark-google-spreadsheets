@@ -56,9 +56,12 @@ OPTIONS (
 ## Scala API
 
 ```scala
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.SparkSession
 
-val sqlContext = new SQLContext(sc)
+val sqlContext = SparkSession.builder()
+  .master("local[2]")
+  .appName("SpreadsheetSuite")
+  .getOrCreate().sqlContext
 
 // Creates a DataFrame from a specified worksheet
 val df = sqlContext.read.
@@ -83,9 +86,12 @@ Provide authentication credentials to your application code by setting the envir
 
 
 ```scala
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.SparkSession
 
-val sqlContext = new SQLContext(sc)
+val sqlContext = SparkSession.builder()
+  .master("local[2]")
+  .appName("SpreadsheetSuite")
+  .getOrCreate().sqlContext
 
 // Creates a DataFrame from a specified worksheet
 val df = sqlContext.read.
