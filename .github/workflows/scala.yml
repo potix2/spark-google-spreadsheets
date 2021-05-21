@@ -21,6 +21,8 @@ jobs:
     - name: Clean
       run: sbt clean
     - name: Check coverage
-      run: sbt coverage
+      env:
+          COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+      run: sbt coveralls
     - name: Run tests
       run: sbt test
