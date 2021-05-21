@@ -23,6 +23,6 @@ jobs:
     - name: Check coverage
       env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
-      run: sbt coveralls
+      run: sbt coverageAggregate coveralls
     - name: Run tests
       run: sbt test
