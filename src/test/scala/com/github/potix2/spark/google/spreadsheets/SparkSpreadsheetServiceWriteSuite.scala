@@ -14,13 +14,14 @@
 package com.github.potix2.spark.google.spreadsheets
 
 import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheet
-import com.google.api.services.sheets.v4.model.{ExtendedValue, CellData, RowData}
+import com.google.api.services.sheets.v4.model.{CellData, ExtendedValue, RowData}
 import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
-import org.scalatest.{BeforeAndAfter, FlatSpec}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.collection.JavaConverters._
 
-class SparkSpreadsheetServiceWriteSuite extends FlatSpec with BeforeAndAfter {
+class SparkSpreadsheetServiceWriteSuite extends AnyFlatSpec with BeforeAndAfter {
   private val serviceAccountId = "53797494708-ds5v22b6cbpchrv2qih1vg8kru098k9i@developer.gserviceaccount.com"
   private val testCredentialPath = "src/test/resources/spark-google-spreadsheets-test-eb7b191d1e1d.p12"
   private val TEST_SPREADSHEET_NAME = "WriteSuite"
@@ -34,9 +35,9 @@ class SparkSpreadsheetServiceWriteSuite extends FlatSpec with BeforeAndAfter {
 
   def definedSchema: StructType = {
     new StructType()
-      .add(new StructField("col_1", DataTypes.StringType))
-      .add(new StructField("col_2", DataTypes.LongType))
-      .add(new StructField("col_3", DataTypes.StringType))
+      .add(StructField("col_1", DataTypes.StringType))
+      .add(StructField("col_2", DataTypes.LongType))
+      .add(StructField("col_3", DataTypes.StringType))
   }
 
   case class Elem(col_1: String, col_2: Long, col_3: String)

@@ -14,23 +14,26 @@
 package com.github.potix2.spark.google.spreadsheets
 
 import java.io.File
-
 import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Row, SQLContext}
-import org.scalatest.{BeforeAndAfter, FlatSpec}
+import org.apache.spark.sql.{Row, SQLContext, SparkSession}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.util.Random
 
-class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
+class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
   private val serviceAccountId = "53797494708-ds5v22b6cbpchrv2qih1vg8kru098k9i@developer.gserviceaccount.com"
   private val testCredentialPath = "src/test/resources/spark-google-spreadsheets-test-eb7b191d1e1d.p12"
   private val TEST_SPREADSHEET_ID = "1H40ZeqXrMRxgHIi3XxmHwsPs2SgVuLUFbtaGcqCAk6c"
 
   private var sqlContext: SQLContext = _
   before {
-    sqlContext = new SQLContext(new SparkContext("local[2]", "SpreadsheetSuite"))
+    sqlContext = SparkSession.builder()
+      .master("local[2]")
+      .appName("SpreadsheetSuite")
+      .getOrCreate().sqlContext
   }
 
   after {
@@ -44,7 +47,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
       .foreach(_.deleteWorksheet(worksheetName))
   }
 
-  def withNewEmptyWorksheet(testCode:(String) => Any): Unit = {
+  def withNewEmptyWorksheet(testCode: String => Any): Unit = {
     implicit val spreadSheetContext = SparkSpreadsheetService(Some(serviceAccountId), new File(testCredentialPath))
     val spreadsheet = SparkSpreadsheetService.findSpreadsheet(TEST_SPREADSHEET_ID)
     spreadsheet.foreach { s =>
@@ -80,7 +83,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
       .select("col1")
       .collect()
 
-    assert(results.size === 15)
+    assert(results.length === 15)
   }
 
   it should "have a `long` value" in {
@@ -120,11 +123,11 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
     val RowCount = 10
 
     def firstNameValue(id: Int): String = {
-      if (id % 3 != 0) s"first-${id}" else null
+      if (id % 3 != 0) s"first-$id" else null
     }
 
     def lastNameValue(id: Int): String = {
-      if (id % 4 != 0) s"last-${id}" else null
+      if (id % 4 != 0) s"last-$id" else null
     }
 
     val personsRows = (1 to RowCount) map { id: Int =>
@@ -150,7 +153,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
         .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
         .collect()
 
-      assert(result.size == 3)
+      assert(result.length == 3)
       assert(result(0).getString(0) == "1")
       assert(result(0).getString(1) == "Kathleen")
       assert(result(0).getString(2) == "Cole")
@@ -163,7 +166,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
       .option("credentialPath", testCredentialPath)
       .spreadsheet(s"$TEST_SPREADSHEET_ID/case3")
 
-    assert(results.columns.size === 2)
+    assert(results.columns.length === 2)
     assert(results.columns.contains("a"))
     assert(results.columns.contains("b"))
   }
@@ -264,7 +267,7 @@ class SpreadsheetSuite extends FlatSpec with BeforeAndAfter {
         .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
         .collect()
 
-      assert(result.size == 3)
+      assert(result.length == 3)
       assert(result(0).getString(0) == "1")
     }
   }

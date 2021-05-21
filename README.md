@@ -2,7 +2,7 @@
 
 Google Spreadsheets datasource for [SparkSQL and DataFrames](http://spark.apache.org/docs/latest/sql-programming-guide.html)
 
-[![Build Status](https://travis-ci.org/potix2/spark-google-spreadsheets.svg?branch=master)](https://travis-ci.org/potix2/spark-google-spreadsheets)
+[![Build Status](https://travis-ci.org/kostjas/spark-google-spreadsheets.svg?branch=master)](https://travis-ci.org/kostjas/spark-google-spreadsheets)
 
 ## Notice
 
@@ -20,25 +20,23 @@ This library supports different versions of Spark:
 
 | This library | Spark Version |
 | ------------ | ------------- |
-| 0.6.x        | 2.3.x, 2.4.x  |
-| 0.5.x        | 2.0.x         |
-| 0.4.x        | 1.6.x         |
+| 0.10.x        | 3.1.1  |
 
 ## Linking
 
 Using SBT:
 
 ```
-libraryDependencies += "com.github.potix2" %% "spark-google-spreadsheets" % "0.6.3"
+libraryDependencies += "com.github.kostjas" %% "spark-google-spreadsheets" % "0.10.0-SNAPSHOT"
 ```
 
 Using Maven:
 
 ```xml
 <dependency>
-  <groupId>com.github.potix2</groupId>
-  <artifactId>spark-google-spreadsheets_2.11</artifactId>
-  <version>0.6.3</version>
+  <groupId>com.github.kostjas</groupId>
+  <artifactId>spark-google-spreadsheets_2.12</artifactId>
+  <version>0.10.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -63,14 +61,14 @@ val sqlContext = new SQLContext(sc)
 
 // Creates a DataFrame from a specified worksheet
 val df = sqlContext.read.
-    format("com.github.potix2.spark.google.spreadsheets").
+    format("com.github.kostjas.spark.google.spreadsheets").
     option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
     option("credentialPath", "/path/to/credential.p12").
     load("<spreadsheetId>/worksheet1")
 
 // Saves a DataFrame to a new worksheet
 df.write.
-    format("com.github.potix2.spark.google.spreadsheets").
+    format("com.github.kostjas.spark.google.spreadsheets").
     option("serviceAccountId", "xxxxxx@developer.gserviceaccount.com").
     option("credentialPath", "/path/to/credential.p12").
     save("<spreadsheetId>/newWorksheet")
@@ -90,7 +88,7 @@ val sqlContext = new SQLContext(sc)
 
 // Creates a DataFrame from a specified worksheet
 val df = sqlContext.read.
-    format("com.github.potix2.spark.google.spreadsheets").
+    format("com.github.kostjas.spark.google.spreadsheets").
     load("<spreadsheetId>/worksheet1")
 ```
 
