@@ -18,11 +18,10 @@ jobs:
       with:
         java-version: '11'
         distribution: 'adopt'
-    - name: Clean
-      run: sbt clean
+    - name: Run Tests
+      run: "sbt clean test"
     - name: Check coverage
       env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-      run: "sbt coverageAggregate coveralls"
-    - name: Run tests
-      run: sbt test
+      run: "sbt coverage test coverageAggregate coveralls"
+
