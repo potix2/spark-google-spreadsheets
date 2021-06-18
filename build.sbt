@@ -2,7 +2,15 @@ enablePlugins(SparkPlugin)
 
 name := "spark-google-spreadsheets"
 
-organization := "com.github.kostjas"
+organization := "io.github.kostjas.spark-google-spreadsheets"
+
+homepage := Some(url("https://github.com/kostjas/spark-google-spreadsheets"))
+
+organizationHomepage := Some(url("https://github.com/kostjas"))
+
+description := "Google Spreadsheets datasource for SparkSQL and DataFrames."
+
+licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
 scalaVersion := "2.12.13"
 
@@ -10,11 +18,7 @@ version := "0.10.0-SNAPSHOT"
 
 sparkVersion := "3.1.1"
 
-val testSparkVersion = settingKey[String]("The version of Spark to test against.")
-
-testSparkVersion := sys.props.get("spark.testVersion").getOrElse(sparkVersion.value)
-
-sparkComponents := Seq("sql")
+sparkComponents := Seq("core", "sql")
 
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.30" % "provided",
@@ -26,49 +30,55 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.apache.spark" %% "spark-core" % testSparkVersion.value % "test" force(),
-  "org.apache.spark" %% "spark-sql" % testSparkVersion.value % "test"  force(),
   "org.scala-lang" % "scala-library" % scalaVersion.value % "compile",
   "javax.servlet" % "javax.servlet-api" % "4.0.1" % "compile"
 )
+
+resolvers ++= Seq(Resolver.mavenLocal, Resolver.sonatypeRepo("staging"))
 
 /**
  * release settings
  */
 publishMavenStyle := true
 
-licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
+pgpKeyRing := Some(file("~/.gnupg/pubring.kbx"))
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
 publishArtifact in Test := false
 
+// Remove all additional repository other than Maven Central from POM
 pomIncludeRepository := { _ => false }
 
-publishTo := {
-  val nexus = "https://oss.sonatype.org/"
-  if (version.value.endsWith("SNAPSHOT"))
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-}
+credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials")
 
-pomExtra := (
-  <url>https://github.com/kostjas/spark-google-spreadsheets</url>
-  <scm>
-    <url>git@github.com:kostjas/spark-google-spreadsheets.git</url>
-    <connection>scm:git:git@github.com:kostjas/spark-google-spreadsheets.git</connection>
-  </scm>
-  <developers>
-    <developer>
-      <id>kostjas</id>
-      <name>KostjaS</name>
-      <url>https://github.com/kostjas/</url>
-    </developer>
-  </developers>)
+// For all Sonatype accounts created on or after February 2021
+sonatypeCredentialHost := "s01.oss.sonatype.org"
+
+sonatypeProfileName := "io.github.kostjas"
+
+publishTo := sonatypePublishToBundle.value
+
+scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/kostjas/spark-google-spreadsheets"),
+    "git@github.com:kostjas/spark-google-spreadsheets.git"
+  )
+)
+
+developers := List(
+  Developer(
+    id    = "kostjas",
+    name  = "Kostya Spitsyn",
+    email = "konstantin.spitsyn@gmail.com",
+    url   = url("https://github.com/kostjas/")
+  )
+)
 
 // Skip tests during assembly
 test in assembly := {}
+
+releaseCrossBuild := false
 
 import ReleaseTransformations._
 
@@ -76,12 +86,16 @@ import ReleaseTransformations._
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
+  runClean,
   runTest,
   setReleaseVersion,
   commitReleaseVersion,
   tagRelease,
-  publishArtifacts,
+  releaseStepCommandAndRemaining("publishSigned"),
+  releaseStepCommand("sonatypeBundleRelease"),
   setNextVersion,
   commitNextVersion,
   pushChanges
 )
+
+releaseVcsSign := true
