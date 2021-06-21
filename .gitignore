@@ -1,5 +1,35 @@
+# Sbt
+target
+.bsp
 sbt/sbt-launch*.jar
-target/
-.idea/
+
+# Idea
+.idea
+*.iml
+*.ipr
+*.iws
+.buildpath
 .idea_modules/
+
+# Eclipse
+.project
+.classpath
+.settings
+.scala_dependencies
+
+# Scala-IDE specific
+.worksheet
+
+# Emacs
+*~
+*#
+.#*
+.ensime
+TAGS
+
+# Visual Studio Code
+.metals
+.bloop
+
+# MacOS specific
 .DS_Store
