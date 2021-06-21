@@ -2,7 +2,7 @@ enablePlugins(SparkPlugin)
 
 name := "spark-google-spreadsheets"
 
-organization := "io.github.kostjas.spark-google-spreadsheets"
+organization := "io.github.kostjas"
 
 homepage := Some(url("https://github.com/kostjas/spark-google-spreadsheets"))
 
@@ -13,8 +13,6 @@ description := "Google Spreadsheets datasource for SparkSQL and DataFrames."
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
 scalaVersion := "2.12.13"
-
-version := "0.10.0-SNAPSHOT"
 
 sparkVersion := "3.1.1"
 
