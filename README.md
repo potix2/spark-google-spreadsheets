@@ -28,7 +28,7 @@ This library supports different versions of Spark:
 Using SBT:
 
 ```
-libraryDependencies += "com.github.kostjas" %% "spark-google-spreadsheets" % "0.10.0-SNAPSHOT"
+libraryDependencies += "com.github.kostjas" %% "spark-google-spreadsheets" % "0.11.0"
 ```
 
 Using Maven:
@@ -37,7 +37,7 @@ Using Maven:
 <dependency>
   <groupId>com.github.kostjas</groupId>
   <artifactId>spark-google-spreadsheets_2.12</artifactId>
-  <version>0.10.0-SNAPSHOT</version>
+  <version>0.11.0</version>
 </dependency>
 ```
 
