@@ -20,6 +20,7 @@ This library supports different versions of Spark:
 
 | This library | Spark Version |
 | ------------ | ------------- |
+| 0.7.x        | 3.1.x         |
 | 0.6.x        | 2.3.x, 2.4.x  |
 | 0.5.x        | 2.0.x         |
 | 0.4.x        | 1.6.x         |
