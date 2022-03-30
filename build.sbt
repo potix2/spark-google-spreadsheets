@@ -12,19 +12,17 @@ description := "Google Spreadsheets datasource for SparkSQL and DataFrames."
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 
-scalaVersion := "2.12.13"
+scalaVersion := "2.12.15"
 
-sparkVersion := "3.1.1"
+sparkVersion := "3.2.1"
 
 sparkComponents := Seq("core", "sql")
 
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.30" % "provided",
   "org.scalatest" %% "scalatest" % "3.2.9" % "test",
-  ("com.google.api-client" % "google-api-client" % "1.31.5").
-    exclude("com.google.guava", "guava-jdk5")
-    .exclude("com.google.guava", "guava:30.1.1-android"),
-  "com.google.apis" % "google-api-services-sheets" % "v4-rev20210322-1.31.0"
+  "com.google.apis" % "google-api-services-sheets" % "v4-rev20210629-1.32.1",
+  "com.google.auth" % "google-auth-library-oauth2-http" % "1.4.0"
 )
 
 libraryDependencies ++= Seq(
@@ -43,7 +41,7 @@ pgpKeyRing := Some(file("~/.gnupg/pubring.kbx"))
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
-publishArtifact in Test := false
+Test / publishArtifact := false
 
 // Remove all additional repository other than Maven Central from POM
 pomIncludeRepository := { _ => false }
@@ -74,7 +72,7 @@ developers := List(
 )
 
 // Skip tests during assembly
-test in assembly := {}
+assembly / test := {}
 
 releaseCrossBuild := false
 
