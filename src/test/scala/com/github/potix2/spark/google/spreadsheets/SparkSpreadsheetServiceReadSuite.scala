@@ -13,20 +13,21 @@
  */
 package com.github.potix2.spark.google.spreadsheets
 
-import java.io.File
+import com.github.potix2.spark.google.spreadsheets.util.Credentials
+
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 
 class SparkSpreadsheetServiceReadSuite extends AnyFlatSpec with BeforeAndAfter {
-  private val serviceAccountId = "53797494708-ds5v22b6cbpchrv2qih1vg8kru098k9i@developer.gserviceaccount.com"
-  private val testCredentialPath = "src/test/resources/spark-google-spreadsheets-test-eb7b191d1e1d.p12"
   private val TEST_SPREADSHEET_NAME = "SpreadsheetSuite"
-  private val TEST_SPREADSHEET_ID = "1H40ZeqXrMRxgHIi3XxmHwsPs2SgVuLUFbtaGcqCAk6c"
+
+  private val oAuthJson = System.getenv("OAUTH_JSON")
+  private val testSpreadsheetID = System.getenv("TEST_SPREADSHEET_ID")
 
   private val context: SparkSpreadsheetService.SparkSpreadsheetContext =
-    SparkSpreadsheetService.SparkSpreadsheetContext(Some(serviceAccountId), new File(testCredentialPath))
+    SparkSpreadsheetService.SparkSpreadsheetContext(Credentials.credentialsFromJsonString(oAuthJson))
   private val spreadsheet: SparkSpreadsheetService.SparkSpreadsheet =
-    context.findSpreadsheet(TEST_SPREADSHEET_ID)
+    context.findSpreadsheet(testSpreadsheetID)
 
   behavior of "A Spreadsheet"
 

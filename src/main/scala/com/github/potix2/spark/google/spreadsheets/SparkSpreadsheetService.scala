@@ -13,49 +13,31 @@
  */
 package com.github.potix2.spark.google.spreadsheets
 
-import java.io.File
-import java.net.URL
-
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential.Builder
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.http.javanet.NetHttpTransport
-import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.sheets.v4.model._
-import com.google.api.services.sheets.v4.{Sheets, SheetsScopes}
 import org.apache.spark.sql.types.StructType
-import scala.collection.JavaConverters._
+import com.google.api.services.sheets.v4.Sheets
 
+import java.util.{List => JavaList}
+import scala.collection.JavaConverters._
+import com.google.api.client.json.gson.GsonFactory
+import com.google.auth.http.HttpCredentialsAdapter
+
+import scala.Option.option2Iterable
+import scala.util.Try
 
 object SparkSpreadsheetService {
-  private val SPREADSHEET_URL = new URL("https://spreadsheets.google.com/feeds/spreadsheets/private/full")
-  private val scopes = List(SheetsScopes.SPREADSHEETS)
   private val APP_NAME = "spark-google-spreadsheets-1.0.0"
   private val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
   private val JSON_FACTORY: GsonFactory = GsonFactory.getDefaultInstance
 
-  case class SparkSpreadsheetContext(serviceAccountIdOption: Option[String], p12File: File) {
-    private val credential = authorize(serviceAccountIdOption, p12File)
-    lazy val service =
-      new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
+  case class SparkSpreadsheetContext(credentials: HttpCredentialsAdapter) {
+
+    lazy val service: Sheets =
+      new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credentials)
         .setApplicationName(APP_NAME)
         .build()
-
-    private def authorize(serviceAccountIdOption: Option[String], p12File: File): GoogleCredential = {
-      val credential = serviceAccountIdOption
-          .map {
-            new Builder()
-              .setTransport(HTTP_TRANSPORT)
-              .setJsonFactory(JSON_FACTORY)
-              .setServiceAccountId(_)
-              .setServiceAccountPrivateKeyFromP12File(p12File)
-              .setServiceAccountScopes(scopes.asJava)
-              .build()
-          }.getOrElse(GoogleCredential.getApplicationDefault.createScoped(scopes.asJava))
-
-      credential.refreshToken()
-      credential
-    }
 
     def findSpreadsheet(spreadSheetId: String): SparkSpreadsheet =
       SparkSpreadsheet(this, service.spreadsheets().get(spreadSheetId).execute())
@@ -64,7 +46,7 @@ object SparkSpreadsheetService {
       service.spreadsheets().values().get(spreadsheetId, range).execute()
   }
 
-  case class SparkSpreadsheet(context:SparkSpreadsheetContext, private var spreadsheet: Spreadsheet) {
+  case class SparkSpreadsheet(context: SparkSpreadsheetContext, private var spreadsheet: Spreadsheet) {
     def name: String = spreadsheet.getProperties.getTitle
     def getWorksheets: Seq[SparkWorksheet] =
       spreadsheet.getSheets.asScala.map(SparkWorksheet(context, spreadsheet, _))
@@ -83,9 +65,7 @@ object SparkSpreadsheetService {
               .setColumnCount(colNum)
               .setRowCount(rowNum)))
 
-      val requests = List(
-        new Request().setAddSheet(addSheetRequest)
-      )
+      val requests = List(new Request().setAddSheet(addSheetRequest))
 
       context.service.spreadsheets().batchUpdate(spreadsheet.getSpreadsheetId,
         new BatchUpdateSpreadsheetRequest()
@@ -113,7 +93,7 @@ object SparkSpreadsheetService {
         new CellData()
           .setUserEnteredValue(new ExtendedValue()
             .setStringValue(field.name))
-      }.toList
+      }(collection.breakOut)
 
       val updateHeaderRequest = new UpdateCellsRequest()
         .setStart(new GridCoordinate()
@@ -166,17 +146,30 @@ object SparkSpreadsheetService {
   }
 
   case class SparkWorksheet(context: SparkSpreadsheetContext, spreadsheet: Spreadsheet, sheet: Sheet) {
-    def name: String = sheet.getProperties.getTitle
-    lazy val values = {
-      val valueRange = context.query(spreadsheet.getSpreadsheetId, name)
-      if ( valueRange.getValues != null )
-        valueRange.getValues
-      else
-        List[java.util.List[Object]]().asJava
-    }
+
+    require(sheet.getProperties.getTitle != null, "Title of spreadsheet should be defined.")
+
+    val name: String = sheet.getProperties.getTitle
+
+    lazy val values: Option[List[JavaList[Object]]] =
+      Option(context.query(spreadsheet.getSpreadsheetId, name).getValues).map(_.asScala.toList)
 
     lazy val headers: Seq[String] =
-      values.asScala.headOption.map { row => row.asScala.map(_.toString) }.getOrElse(List())
+      values.toSeq.flatMap(_.headOption
+        .fold[Seq[String]](Seq.empty)(_.asScala.map(_.toString)(collection.breakOut))
+      )
+
+    lazy val rows: Seq[Map[String, String]] = {
+      values.fold(Seq.empty[Map[String, String]])(v =>
+        if (v.isEmpty) {
+          Seq.empty
+        } else {
+          v.tail.map { row =>
+            headers.zip(row.asScala.map(_.toString))(collection.breakOut): Map[String, String]
+          }
+        }
+      )
+    }
 
     def updateCells[T](schema: StructType, data: List[T], extractor: T => RowData): Unit = {
       val colNum = schema.fields.length
@@ -197,7 +190,7 @@ object SparkSpreadsheetService {
         new CellData()
           .setUserEnteredValue(new ExtendedValue()
             .setStringValue(field.name))
-      }.toList
+      }(collection.breakOut)
 
       val updateHeaderRequest = new UpdateCellsRequest()
         .setStart(new GridCoordinate()
@@ -225,24 +218,16 @@ object SparkSpreadsheetService {
         new BatchUpdateSpreadsheetRequest()
           .setRequests(requests.asJava)).execute()
     }
-
-    def rows: Seq[Map[String, String]] =
-      if(values.isEmpty) {
-        Seq()
-      }
-      else {
-        values.asScala.tail.map { row => headers.zip(row.asScala.map(_.toString)).toMap }
-      }
   }
 
   /**
-   * create new context of spareadsheets for spark
+   * create new context of spreadsheets for spark
    *
-   * @param serviceAccountIdOption
-   * @param p12File
+   * @param credentials
    * @return
    */
-  def apply(serviceAccountIdOption: Option[String], p12File: File) = SparkSpreadsheetContext(serviceAccountIdOption, p12File)
+  def apply(credentials: HttpCredentialsAdapter): SparkSpreadsheetContext =
+    SparkSpreadsheetContext(credentials)
 
   /**
    * find a spreadsheet by name
@@ -251,6 +236,6 @@ object SparkSpreadsheetService {
    * @param context
    * @return
    */
-  def findSpreadsheet(spreadsheetName: String)(implicit context: SparkSpreadsheetContext): Option[SparkSpreadsheet] =
-    Some(context.findSpreadsheet(spreadsheetName))
+  def findSpreadsheet(spreadsheetName: String)(context: SparkSpreadsheetContext): Option[SparkSpreadsheet] =
+    Try(context.findSpreadsheet(spreadsheetName)).toOption
 }

@@ -13,19 +13,23 @@
  */
 package com.github.potix2.spark.google.spreadsheets
 
-import java.io.File
 import com.github.potix2.spark.google.spreadsheets.SparkSpreadsheetService.SparkSpreadsheetContext
+import com.github.potix2.spark.google.spreadsheets.util.Credentials
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Row, SQLContext, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, SparkSession}
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.util.Random
 
 class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
-  private val serviceAccountId = "53797494708-ds5v22b6cbpchrv2qih1vg8kru098k9i@developer.gserviceaccount.com"
-  private val testCredentialPath = "src/test/resources/spark-google-spreadsheets-test-eb7b191d1e1d.p12"
-  private val TEST_SPREADSHEET_ID = "1H40ZeqXrMRxgHIi3XxmHwsPs2SgVuLUFbtaGcqCAk6c"
+
+  private val oAuthJson = System.getenv("OAUTH_JSON")
+  private val testSpreadsheetID = System.getenv("TEST_SPREADSHEET_ID")
+
+  private val credentials = Credentials.credentialsFromJsonString(oAuthJson)
+  private val spreadSheetContext = SparkSpreadsheetService(credentials)
 
   private var sqlContext: SQLContext = _
   before {
@@ -40,15 +44,14 @@ class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
   }
 
   private[spreadsheets] def deleteWorksheet(spreadSheetName: String, worksheetName: String)
-                                           (implicit spreadSheetContext: SparkSpreadsheetContext): Unit = {
+                                           (spreadSheetContext: SparkSpreadsheetContext): Unit = {
     SparkSpreadsheetService
-      .findSpreadsheet(spreadSheetName)
+      .findSpreadsheet(spreadSheetName)(spreadSheetContext)
       .foreach(_.deleteWorksheet(worksheetName))
   }
 
   def withNewEmptyWorksheet(testCode: String => Any): Unit = {
-    implicit val spreadSheetContext = SparkSpreadsheetService(Some(serviceAccountId), new File(testCredentialPath))
-    val spreadsheet = SparkSpreadsheetService.findSpreadsheet(TEST_SPREADSHEET_ID)
+    val spreadsheet = SparkSpreadsheetService.findSpreadsheet(testSpreadsheetID)(spreadSheetContext)
     spreadsheet.foreach { s =>
       val workSheetName = Random.alphanumeric.take(16).mkString
       s.addWorksheet(workSheetName, 1000, 1000)
@@ -61,14 +64,13 @@ class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
     }
   }
 
-  def withEmptyWorksheet(testCode:(String) => Any): Unit = {
-    implicit val spreadSheetContext = SparkSpreadsheetService(Some(serviceAccountId), new File(testCredentialPath))
+  def withEmptyWorksheet(testCode: String => Any): Unit = {
     val workSheetName = Random.alphanumeric.take(16).mkString
     try {
       testCode(workSheetName)
     }
     finally {
-      deleteWorksheet(TEST_SPREADSHEET_ID, workSheetName)
+      deleteWorksheet(testSpreadsheetID, workSheetName)(spreadSheetContext)
     }
   }
 
@@ -76,9 +78,8 @@ class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
 
   it should "behave as a DataFrame" in {
     val results = sqlContext.read
-      .option("serviceAccountId", serviceAccountId)
-      .option("credentialPath", testCredentialPath)
-      .spreadsheet(s"$TEST_SPREADSHEET_ID/case1")
+      .option("credentialsJson", oAuthJson)
+      .spreadsheet(s"$testSpreadsheetID/case1")
       .select("col1")
       .collect()
 
@@ -93,10 +94,9 @@ class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
     ))
 
     val results = sqlContext.read
-      .option("serviceAccountId", serviceAccountId)
-      .option("credentialPath", testCredentialPath)
+      .option("credentialsJson", oAuthJson)
       .schema(schema)
-      .spreadsheet(s"$TEST_SPREADSHEET_ID/case1")
+      .spreadsheet(s"$testSpreadsheetID/case1")
       .select("col1", "col2", "col3")
       .collect()
 
@@ -142,14 +142,12 @@ class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
     import com.github.potix2.spark.google.spreadsheets._
     withEmptyWorksheet { workSheetName =>
       personsDF.write
-        .option("serviceAccountId", serviceAccountId)
-        .option("credentialPath", testCredentialPath)
-        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+        .option("credentialsJson", oAuthJson)
+        .spreadsheet(s"$testSpreadsheetID/$workSheetName")
 
       val result = sqlContext.read
-        .option("serviceAccountId", serviceAccountId)
-        .option("credentialPath", testCredentialPath)
-        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+        .option("credentialsJson", oAuthJson)
+        .spreadsheet(s"$testSpreadsheetID/$workSheetName")
         .collect()
 
       assert(result.length == 3)
@@ -161,9 +159,8 @@ class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
 
   it should "infer it's schema from headers" in {
     val results = sqlContext.read
-      .option("serviceAccountId", serviceAccountId)
-      .option("credentialPath", testCredentialPath)
-      .spreadsheet(s"$TEST_SPREADSHEET_ID/case3")
+      .option("credentialsJson", oAuthJson)
+      .spreadsheet(s"$testSpreadsheetID/case3")
 
     assert(results.columns.length === 2)
     assert(results.columns.contains("a"))
@@ -171,21 +168,18 @@ class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
   }
 
   "A sparse DataFrame" should "be saved as a sheet, preserving empty cells" in new SparsePersonDataFrame {
-    import com.github.potix2.spark.google.spreadsheets._
     withEmptyWorksheet { workSheetName =>
       personsDF.write
-        .option("serviceAccountId", serviceAccountId)
-        .option("credentialPath", testCredentialPath)
-        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+        .option("credentialsJson", oAuthJson)
+        .spreadsheet(s"$testSpreadsheetID/$workSheetName")
 
       val result = sqlContext.read
         .schema(personsSchema)
-        .option("serviceAccountId", serviceAccountId)
-        .option("credentialPath", testCredentialPath)
-        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+        .option("credentialsJson", oAuthJson)
+        .spreadsheet(s"$testSpreadsheetID/$workSheetName")
         .collect()
 
-      assert(result.size == RowCount)
+      assert(result.length == RowCount)
 
       (1 to RowCount) foreach { id: Int =>
         val row = id - 1
@@ -204,10 +198,9 @@ class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
            |CREATE TEMPORARY TABLE people
            |(id int, firstname string, lastname string)
            |USING com.github.potix2.spark.google.spreadsheets
-           |OPTIONS (path "$TEST_SPREADSHEET_ID/$worksheetName", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+           |OPTIONS (path "$testSpreadsheetID/$worksheetName", credentialsJson '$oAuthJson')
        """.stripMargin.replaceAll("\n", " "))
-
-      assert(sqlContext.sql("SELECT * FROM people").collect().size == 0)
+      assert(sqlContext.sql("SELECT * FROM people").collect().length == 0)
     }
   }
 
@@ -216,10 +209,10 @@ class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
       s"""
          |CREATE TEMPORARY TABLE SpreadsheetSuite
          |USING com.github.potix2.spark.google.spreadsheets
-         |OPTIONS (path "$TEST_SPREADSHEET_ID/case2", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+         |OPTIONS (path "$testSpreadsheetID/case2", credentialsJson '$oAuthJson')
        """.stripMargin.replaceAll("\n", " "))
 
-    assert(sqlContext.sql("SELECT id, firstname, lastname FROM SpreadsheetSuite").collect().size == 10)
+    assert(sqlContext.sql("SELECT id, firstname, lastname FROM SpreadsheetSuite").collect().length == 10)
   }
 
   it should "be inserted from sql" in {
@@ -229,41 +222,37 @@ class SpreadsheetSuite extends AnyFlatSpec with BeforeAndAfter {
            |CREATE TEMPORARY TABLE accesslog
            |(id string, firstname string, lastname string, email string, country string, ipaddress string)
            |USING com.github.potix2.spark.google.spreadsheets
-           |OPTIONS (path "$TEST_SPREADSHEET_ID/$worksheetName", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+           |OPTIONS (path "$testSpreadsheetID/$worksheetName", credentialsJson '$oAuthJson')
        """.stripMargin.replaceAll("\n", " "))
 
       sqlContext.sql(
         s"""
            |CREATE TEMPORARY TABLE SpreadsheetSuite
            |USING com.github.potix2.spark.google.spreadsheets
-           |OPTIONS (path "$TEST_SPREADSHEET_ID/case2", serviceAccountId "$serviceAccountId", credentialPath "$testCredentialPath")
+           |OPTIONS (path "$testSpreadsheetID/case2", credentialsJson '$oAuthJson')
        """.stripMargin.replaceAll("\n", " "))
 
       sqlContext.sql("INSERT OVERWRITE TABLE accesslog SELECT * FROM SpreadsheetSuite")
-      assert(sqlContext.sql("SELECT id, firstname, lastname FROM accesslog").collect().size == 10)
+      assert(sqlContext.sql("SELECT id, firstname, lastname FROM accesslog").collect().length == 10)
     }
   }
 
   trait UnderscoreDataFrame {
-    val aSchema = StructType(List(
-      StructField("foo_bar", IntegerType, true)))
+    val aSchema: StructType = StructType(List(StructField("foo_bar", IntegerType, true)))
     val aRows = Seq(Row(1), Row(2), Row(3))
-    val aRDD = sqlContext.sparkContext.parallelize(aRows)
-    val aDF = sqlContext.createDataFrame(aRDD, aSchema)
+    val aRDD: RDD[Row] = sqlContext.sparkContext.parallelize(aRows)
+    val aDF: DataFrame = sqlContext.createDataFrame(aRDD, aSchema)
   }
 
   "The underscore" should "be used in a column name" in new UnderscoreDataFrame {
-    import com.github.potix2.spark.google.spreadsheets._
     withEmptyWorksheet { workSheetName =>
       aDF.write
-        .option("serviceAccountId", serviceAccountId)
-        .option("credentialPath", testCredentialPath)
-        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+        .option("credentialsJson", oAuthJson)
+        .spreadsheet(s"$testSpreadsheetID/$workSheetName")
 
       val result = sqlContext.read
-        .option("serviceAccountId", serviceAccountId)
-        .option("credentialPath", testCredentialPath)
-        .spreadsheet(s"$TEST_SPREADSHEET_ID/$workSheetName")
+        .option("credentialsJson", oAuthJson)
+        .spreadsheet(s"$testSpreadsheetID/$workSheetName")
         .collect()
 
       assert(result.length == 3)

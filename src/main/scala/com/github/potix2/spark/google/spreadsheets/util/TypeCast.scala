@@ -12,10 +12,10 @@ import scala.util.Try
 object TypeCast {
 
   private[spreadsheets] def castTo(
-                                   datum: String,
-                                   castType: DataType,
-                                   nullable: Boolean = true
-                                 ): Any = {
+    datum: String,
+    castType: DataType,
+    nullable: Boolean = true
+  ): Any = {
     castType match {
       case _: ByteType => datum.toByte
       case _: ShortType => datum.toShort

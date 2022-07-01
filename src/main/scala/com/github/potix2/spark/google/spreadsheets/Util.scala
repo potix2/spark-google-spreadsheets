@@ -1,10 +1,12 @@
 package com.github.potix2.spark.google.spreadsheets
 
-import com.google.api.services.sheets.v4.model.{ExtendedValue, CellData, RowData}
+import com.google.api.services.sheets.v4.model.{CellData, ExtendedValue, RowData}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{DataTypes, StructType}
 
 import scala.collection.JavaConverters._
+import scala.collection.breakOut
+import scala.language.postfixOps
 
 object Util {
   def convert(schema: StructType, row: Row): Map[String, Object] =
@@ -27,7 +29,6 @@ object Util {
                 case DataTypes.DoubleType => new ExtendedValue().setNumberValue(row.getDouble(i))
               }
             )
-        }.toList.asJava
+        }(breakOut).asJava
       )
-
 }

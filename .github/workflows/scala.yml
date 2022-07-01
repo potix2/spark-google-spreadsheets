@@ -21,5 +21,7 @@ jobs:
     - name: Check coverage
       env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+          OAUTH_JSON: ${{ secrets.OAUTH_JSON }}
+          TEST_SPREADSHEET_ID: ${{ secrets.TEST_SPREADSHEET_ID }}
       run: "sbt clean coverage test coverageAggregate coveralls"
 
