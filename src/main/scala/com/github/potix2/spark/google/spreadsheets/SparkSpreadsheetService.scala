@@ -34,6 +34,8 @@ import java.io.IOException
 import java.io.InputStream
 import java.util
 
+import org.apache.commons.io.IOUtils
+
 object SparkSpreadsheetService {
   private val SPREADSHEET_URL = new URL("https://spreadsheets.google.com/feeds/spreadsheets/private/full")
   private val scopes = List(SheetsScopes.SPREADSHEETS)
@@ -41,17 +43,20 @@ object SparkSpreadsheetService {
   private val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
   private val JSON_FACTORY: JacksonFactory = JacksonFactory.getDefaultInstance()
 
-  case class SparkSpreadsheetContext(serviceAccountIdOption: Option[String], p12File: File) {
-    private val credential = authorize(serviceAccountIdOption, p12File)
+  case class SparkSpreadsheetContext(serviceAccountIdOption: Option[String], credentialData: Option[String], p12File: File) {
+    var credential: GoogleCredential = _;
+    if (p12File != null) {
+      credential = authorize(serviceAccountIdOption, p12File)
+    } else {
+      credential = getCredentialFromStream(IOUtils.toInputStream(credentialData.get, "UTF-8"))
+    }
     lazy val service =
       new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
         .setApplicationName(APP_NAME)
         .build()
 
     private def authorize(serviceAccountIdOption: Option[String], p12File: File): GoogleCredential = {
-      if (p12File.getName.endsWith("json")) {
-        getCredentials(p12File)
-      } else {
+      if (p12File.getName.endsWith("p12")) {
         val credential = serviceAccountIdOption
           .map {
             new Builder()
@@ -65,6 +70,8 @@ object SparkSpreadsheetService {
 
         credential.refreshToken()
         credential
+      } else {
+        getCredentials(p12File)
       }
     }
 
@@ -72,15 +79,20 @@ object SparkSpreadsheetService {
     private def getCredentials(jsonFile: File) = {
       val in = new FileInputStream(jsonFile)
       try {
-        val credential = GoogleCredential.fromStream(in).createScoped(scopes)
-        credential.refreshToken();
-        credential
+        getCredentialFromStream(in)
       } catch {
         case e: IOException =>
           throw new RuntimeException(e)
       } finally if (in != null) in.close()
 
     }
+
+    private def getCredentialFromStream(in: InputStream) = {
+      val credential = GoogleCredential.fromStream(in).createScoped(scopes)
+      credential.refreshToken();
+      credential
+    }
+
 
     def findSpreadsheet(spreadSheetId: String) =
       SparkSpreadsheet(this, service.spreadsheets().get(spreadSheetId).execute())
@@ -269,7 +281,10 @@ object SparkSpreadsheetService {
    * @param p12File
    * @return
    */
-  def apply(serviceAccountIdOption: Option[String], p12File: File) = SparkSpreadsheetContext(serviceAccountIdOption, p12File)
+  def apply(serviceAccountIdOption: Option[String], p12File: File) = SparkSpreadsheetContext(serviceAccountIdOption, null, p12File)
+
+  def apply(serviceAccountIdOption: Option[String], credentialData: Option[String]) = SparkSpreadsheetContext(serviceAccountIdOption, credentialData, null)
+
 
   /**
    * find a spreadsheet by name
