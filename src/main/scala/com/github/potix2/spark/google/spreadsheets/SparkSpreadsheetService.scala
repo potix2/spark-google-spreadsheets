@@ -97,8 +97,61 @@ object SparkSpreadsheetService {
     def findSpreadsheet(spreadSheetId: String) =
       SparkSpreadsheet(this, service.spreadsheets().get(spreadSheetId).execute())
 
-    def query(spreadsheetId: String, range: String): ValueRange =
-      service.spreadsheets().values().get(spreadsheetId, range).execute()
+    def query(spreadsheetId: String, range: String): ValueRange = {
+      var temp = addSingleQuotesIfEndsWithNumber(range);
+      var x = service.spreadsheets().values().get(spreadsheetId, temp).execute()
+      if (x.size() > 0) {
+        var head = x.getValues.get(0);
+        var max = 0;
+
+
+        if (x.getValues != null) {
+          var listOfLists = x.getValues
+          if (listOfLists != null) {
+            for (i <- 0 until listOfLists.size()) {
+              var temp = listOfLists.get(i);
+              if (temp.isInstanceOf[java.util.List[_]]) {
+                max = temp.asInstanceOf[java.util.List[_]].size();
+              }
+            }
+          }
+        }
+
+        var index = 0;
+        var listIndex = 0;
+        head.map({
+          fieldName => {
+            if (fieldName == null || fieldName.toString.isEmpty) {
+              index = index + 1;
+              head.set(listIndex, "_col" + index);
+            }
+            listIndex = listIndex + 1;
+          }
+        })
+
+        if (head != null && head.size() >=0) {
+          for (i <- head.size() until max) {
+            index = index + 1;
+            head.add("_col" + index);
+          }
+        }
+      }
+      x
+    }
+  }
+
+  def endsWithNumber(s: String): Boolean = {
+    s match {
+      case _ if s.matches(".*\\d$") => true
+      case _ => false
+    }
+  }
+
+  def addSingleQuotesIfEndsWithNumber(s: String): String = {
+    s match {
+      case _ if s.matches(".*\\d$") => s"'$s'"
+      case _ => s
+    }
   }
 
   case class SparkSpreadsheet(context: SparkSpreadsheetContext, private var spreadsheet: Spreadsheet) {
