@@ -27,7 +27,14 @@ import org.apache.spark.sql.types.StructType
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
+import com.google.api.services.sheets.v4.SheetsScopes
+import java.io.FileInputStream
+import java.io.IOException
+import java.io.InputStream
+import java.util
 
+import org.apache.commons.io.IOUtils
 
 object SparkSpreadsheetService {
   private val SPREADSHEET_URL = new URL("https://spreadsheets.google.com/feeds/spreadsheets/private/full")
@@ -36,15 +43,21 @@ object SparkSpreadsheetService {
   private val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
   private val JSON_FACTORY: JacksonFactory = JacksonFactory.getDefaultInstance()
 
-  case class SparkSpreadsheetContext(serviceAccountIdOption: Option[String], p12File: File) {
-    private val credential = authorize(serviceAccountIdOption, p12File)
+  case class SparkSpreadsheetContext(serviceAccountIdOption: Option[String], credentialData: Option[String], p12File: File) {
+    var credential: GoogleCredential = _;
+    if (p12File != null) {
+      credential = authorize(serviceAccountIdOption, p12File)
+    } else {
+      credential = getCredentialFromStream(IOUtils.toInputStream(credentialData.get, "UTF-8"))
+    }
     lazy val service =
       new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
         .setApplicationName(APP_NAME)
         .build()
 
     private def authorize(serviceAccountIdOption: Option[String], p12File: File): GoogleCredential = {
-      val credential = serviceAccountIdOption
+      if (p12File.getName.endsWith("p12")) {
+        val credential = serviceAccountIdOption
           .map {
             new Builder()
               .setTransport(HTTP_TRANSPORT)
@@ -55,19 +68,95 @@ object SparkSpreadsheetService {
               .build()
           }.getOrElse(GoogleCredential.getApplicationDefault.createScoped(scopes))
 
-      credential.refreshToken()
+        credential.refreshToken()
+        credential
+      } else {
+        getCredentials(p12File)
+      }
+    }
+
+
+    private def getCredentials(jsonFile: File) = {
+      val in = new FileInputStream(jsonFile)
+      try {
+        getCredentialFromStream(in)
+      } catch {
+        case e: IOException =>
+          throw new RuntimeException(e)
+      } finally if (in != null) in.close()
+
+    }
+
+    private def getCredentialFromStream(in: InputStream) = {
+      val credential = GoogleCredential.fromStream(in).createScoped(scopes)
+      credential.refreshToken();
       credential
     }
 
-    def findSpreadsheet(spreadSheetId: String): SparkSpreadsheet =
+
+    def findSpreadsheet(spreadSheetId: String) =
       SparkSpreadsheet(this, service.spreadsheets().get(spreadSheetId).execute())
 
-    def query(spreadsheetId: String, range: String): ValueRange =
-      service.spreadsheets().values().get(spreadsheetId, range).execute()
+    def query(spreadsheetId: String, range: String): ValueRange = {
+      var temp = addSingleQuotesIfEndsWithNumber(range);
+      var x = service.spreadsheets().values().get(spreadsheetId, temp).execute()
+      if (x.size() > 0) {
+        var head = x.getValues.get(0);
+        var max = 0;
+
+
+        if (x.getValues != null) {
+          var listOfLists = x.getValues
+          if (listOfLists != null) {
+            for (i <- 0 until listOfLists.size()) {
+              var temp = listOfLists.get(i);
+              if (temp.isInstanceOf[java.util.List[_]]) {
+                max = temp.asInstanceOf[java.util.List[_]].size();
+              }
+            }
+          }
+        }
+
+        var index = 0;
+        var listIndex = 0;
+        head.map({
+          fieldName => {
+            if (fieldName == null || fieldName.toString.isEmpty) {
+              index = index + 1;
+              head.set(listIndex, "_col" + index);
+            }
+            listIndex = listIndex + 1;
+          }
+        })
+
+        if (head != null && head.size() >=0) {
+          for (i <- head.size() until max) {
+            index = index + 1;
+            head.add("_col" + index);
+          }
+        }
+      }
+      x
+    }
   }
 
-  case class SparkSpreadsheet(context:SparkSpreadsheetContext, private var spreadsheet: Spreadsheet) {
+  def endsWithNumber(s: String): Boolean = {
+    s match {
+      case _ if s.matches(".*\\d$") => true
+      case _ => false
+    }
+  }
+
+  def addSingleQuotesIfEndsWithNumber(s: String): String = {
+    s match {
+      case _ if s.matches(".*\\d$") => s"'$s'"
+      case _ => s
+    }
+  }
+
+  case class SparkSpreadsheet(context: SparkSpreadsheetContext, private var spreadsheet: Spreadsheet) {
     def name: String = spreadsheet.getProperties.getTitle
+
     def getWorksheets: Seq[SparkWorksheet] =
       spreadsheet.getSheets.map(new SparkWorksheet(context, spreadsheet, _))
 
@@ -153,7 +242,7 @@ object SparkSpreadsheetService {
 
     def deleteWorksheet(worksheetName: String): Unit = {
       val worksheet: Option[SparkWorksheet] = findWorksheet(worksheetName)
-      if(worksheet.isDefined) {
+      if (worksheet.isDefined) {
         val request = new Request()
         val sheetId = worksheet.get.sheet.getProperties.getSheetId
         request.setDeleteSheet(new DeleteSheetRequest()
@@ -169,9 +258,10 @@ object SparkSpreadsheetService {
 
   case class SparkWorksheet(context: SparkSpreadsheetContext, spreadsheet: Spreadsheet, sheet: Sheet) {
     def name: String = sheet.getProperties.getTitle
+
     lazy val values = {
       val valueRange = context.query(spreadsheet.getSpreadsheetId, name)
-      if ( valueRange.getValues != null )
+      if (valueRange.getValues != null)
         valueRange.getValues
       else
         List[java.util.List[Object]]().asJava
@@ -229,7 +319,7 @@ object SparkSpreadsheetService {
     }
 
     def rows: Seq[Map[String, String]] =
-      if(values.isEmpty) {
+      if (values.isEmpty) {
         Seq()
       }
       else {
@@ -239,17 +329,20 @@ object SparkSpreadsheetService {
 
   /**
    * create new context of spareadsheets for spark
-    *
-    * @param serviceAccountId
+   *
+   * @param serviceAccountId
    * @param p12File
    * @return
    */
-  def apply(serviceAccountIdOption: Option[String], p12File: File) = SparkSpreadsheetContext(serviceAccountIdOption, p12File)
+  def apply(serviceAccountIdOption: Option[String], p12File: File) = SparkSpreadsheetContext(serviceAccountIdOption, null, p12File)
+
+  def apply(serviceAccountIdOption: Option[String], credentialData: Option[String]) = SparkSpreadsheetContext(serviceAccountIdOption, credentialData, null)
+
 
   /**
    * find a spreadsheet by name
-    *
-    * @param spreadsheetName
+   *
+   * @param spreadsheetName
    * @param context
    * @return
    */

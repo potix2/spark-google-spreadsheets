@@ -46,7 +46,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
     val (spreadsheetName, worksheetName) = pathToSheetNames(parameters)
     implicit val context = createSpreadsheetContext(parameters)
     val spreadsheet = SparkSpreadsheetService.findSpreadsheet(spreadsheetName)
-    if(!spreadsheet.isDefined)
+    if (!spreadsheet.isDefined)
       throw new RuntimeException(s"no such a spreadsheet: $spreadsheetName")
 
     spreadsheet.get.addWorksheet(worksheetName, data.schema, data.collect().toList, Util.toRowData)
@@ -56,7 +56,12 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
   private[spreadsheets] def createSpreadsheetContext(parameters: Map[String, String]) = {
     val serviceAccountIdOption = parameters.get("serviceAccountId")
     val credentialPath = parameters.getOrElse("credentialPath", DEFAULT_CREDENTIAL_PATH)
-    SparkSpreadsheetService(serviceAccountIdOption, new File(credentialPath))
+    val credentialData = parameters.get("credentialData")
+    if (credentialData != null && !credentialData.isEmpty) {
+      SparkSpreadsheetService(serviceAccountIdOption, credentialData)
+    } else {
+      SparkSpreadsheetService(serviceAccountIdOption, new File(credentialPath))
+    }
   }
 
   private[spreadsheets] def createRelation(sqlContext: SQLContext,
